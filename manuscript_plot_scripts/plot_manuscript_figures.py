@@ -1,3 +1,22 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+"""
+pycopanbehave -- An adaptive network mode of behaviour selection in Python
+
+Copyright (C) 2011--2016 Potsdam Institute for Climate Impact Research
+Authors: Jonathan F. Donges <donges@pik-potsdam.de>,
+         Carl-Friedrich Schleussner <schleussner@pik-potsdam.de>,
+         Denis Engemann <denis.engemann@gmail.com>
+URL:     <http://www.pik-potsdam.de/copan/software>
+
+PLOT SCRIPTS
+"""
+
+#
+#  Imports
+#
+
 import os.path as op
 import os,pickle
 
@@ -5,12 +24,17 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+#
+#  Initializations
+#
+
 input_file='trans_smok_output_full.pkl'
 with open(input_file) as w:
     data = pickle.load(w)
 
 if os.path.isdir('figures')==False:
     os.mkdir('figures')
+
 to_plot = [1,2,3]
 set_titles = False
 smokers = data['no_of_smokers']
@@ -27,6 +51,7 @@ color_smoker = '#A44791'
 color_nonsmoker = '#BECD00'
 sns.set(style='ticks', context='poster', font_scale=1.4)
 my_gray = '#6e6a6a'
+
 plt.rcParams.update({k: my_gray for k in (
     'axes.labelcolor',
     'axes.edgecolor',
@@ -34,14 +59,21 @@ plt.rcParams.update({k: my_gray for k in (
     'xtick.color',
     'ytick.color'
 )})
+
 plt.rcParams.update({k: 2.2 for k in (
     'axes.linewidth',
     'ytick.major.width',
     'xtick.major.width'
 )})
 
+#
+#  Define plotting functions
+#
 
 def moving_average(values, window, axis):
+    """
+    Add docstring!
+    """
     weights = np.repeat(1.0, window) / window
     sma = np.apply_along_axis(
         lambda m: np.convolve(m, weights, mode='valid'), arr=values, axis=axis)
@@ -49,16 +81,26 @@ def moving_average(values, window, axis):
 
 
 def preprocess_array(X):
+    """
+    Add docstring!
+    """
     return moving_average(np.transpose(X, (1, 2, 0)), ma_window_size, 1)
 
 
 def rescale(x, axis, method='percent'):
+    """
+    Add docstring!
+    """
     if method == 'divide':
         x = x / x[:, 0:1, :]
     elif method == 'percent':
         x = (x - x[:, 0:1, :]) / x[:, 0:1, :]
         x *= 100
     return x
+
+#
+#  Main plotting script
+#
 
 if 1 in to_plot:
     X = np.array([smokers[k] for k in keys])
