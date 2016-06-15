@@ -16,8 +16,9 @@ URL: <http://www.pik-potsdam.de/members/donges/software>
 #  Import numpy for numerics
 import numpy as np
 
-#  Import Network class from pygeonetwork
-from pygeonetwork import Network
+#  Import Network class from pyunicorn
+from pyunicorn import Network
+
 
 class DynamicSocietyModel(object):
 	"""
@@ -35,9 +36,7 @@ class DynamicSocietyModel(object):
 		self._proximity_structure = proximity_structure.copy()  #  Reference Proximity to which the model is relaxed to
 		self._char_distribution = char_distribution.copy() #  Distribution of the individual characteristics
 		self._char_feedback = char_feedback # flags if the character feedback is active or not
-		#edge_list = initial_acquaintance.get_edge_list()
-		#self._acquaintance_network = Network(edge_list=edge_list, directed=False, silence_level=3)
-		adjacency=initial_acquaintance.get_adjacency()
+		adjacency=initial_acquaintance.adjacency
 		self._acquaintance_network = Network(adjacency=adjacency, directed=False, silence_level=3)
 		self._no_interactions=0.
 		self._new_edges=0
@@ -51,7 +50,7 @@ class DynamicSocietyModel(object):
 		else:
 		    #  If no degree preference passed to __init__, use degree vector
 		    #  of initial acquaintance network
-		    self._degree_preference = initial_acquaintance.get_degree() 
+		    self._degree_preference = initial_acquaintance.degree() 
 
 		#  Set interaction_likelihood function
 		self._interaction_likelihood_function = interaction_likelihood_function
@@ -182,7 +181,7 @@ class DynamicSocietyModel(object):
 	    length) matrix
 	    """
 	    #  Return shortest path lengths matrix
-	    return acquaintance_network.get_path_lengths()
+	    return acquaintance_network.path_lengths()
     
 	def get_interaction_likelihood_matrix(self, distance_metric_matrix, interaction_likelihood_function):
 	    """
@@ -205,7 +204,7 @@ class DynamicSocietyModel(object):
     
 	def update_char_feedback(self,char_distribution,interaction_likelihood_network):
 		char_distribution_update=char_distribution
-		smoking_matrix=self.get_acquaintance_network().get_node_attribute('smoker')
+		smoking_matrix=self.get_acquaintance_network().node_attribute('smoker')
 		sm_share=float(sum(smoking_matrix))/self._N
 		#print 'sm_share',sm_share
 		for i in xrange(char_distribution.shape[1]):
@@ -250,10 +249,10 @@ class DynamicSocietyModel(object):
 	    Returns the updated acquantaince network's adjacency matrix.
 	    """
 		#  Get old acquaintance adjacency matrix
-	    old_acquaintance_adjacency = acquaintance_network.get_adjacency()
+	    old_acquaintance_adjacency = acquaintance_network.adjacency
     
 	    #  Get old degree k
-	    k = acquaintance_network.get_degree()
+	    k = acquaintance_network.degree()
     
 	    #  Initialize new acquaintance adjacency matrix
 	    acquaintance_adjacency = np.zeros(old_acquaintance_adjacency.shape, 
@@ -313,7 +312,7 @@ class DynamicSocietyModel(object):
 	    #print "Symmetry:", ((acquaintance_adjacency - acquaintance_adjacency.transpose())**2).sum()
     
 	    #  Update acquaintance Network object
-	    acquaintance_network.set_adjacency(acquaintance_adjacency)
+	    acquaintance_network.adjacency=acquaintance_adjacency
             
 	    #  Return new acquaintance network
 	    return acquaintance_network

@@ -1,24 +1,31 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""
+# Smoking Transition -- A plug for the pynamic society model to emulate smoking behaviour
+#
+# Copyright (C) 2013 Potsdam Institute for Climate Impact Research
+# Authors: Jonathan F. Donges <donges@pik-potsdam.de>,
+#          Carl-Friedrich Schleussner <schleussner@pik-potsdam.de>
+# https://github.com/pik-copan/pycopanbehave
+
+RUN FILE SMOKER TRANSITION
+"""
+
+
 # Add repository path of the model core
 import sys
 import os
 import glob
-sys.path.append('/Users/carls/Documents/PIK/git_repos/pynamic-society/bin')
-sys.path.append('/home/carls/git_repos/pynamic-society/bin')
+sys.path.append('../bin')
 
 from ens_smoking_transition import *
 
-# output path
-
-#output_path='/scratch/01/carls/social/mod_smok_mobility/smok_mob_1'
-
-output_path='./'#/Users/carls/Downloads/social/base_proxim_02_rand_05_sm_mob_2'
+output_path='./ens_members/'
 
 #check if output path exists
 if os.path.exists(output_path)==False:
-	sys.exit("FATAL: output directory does not exist")
+	os.mkdir(output_path)
 
 #######################################
 # Namelist as a Bunch dictionary
@@ -27,22 +34,22 @@ L=Bunch()
 L.output_path=output_path
 
 #  Ensemble size (number of realizations of model time evolution)
-L.n_ensemble = 96
+L.n_ensemble = 3
 
 # Flag, if a transition from the initial to the final distribution should take place. If false, the final distribution will be applied directly
 L.transition_flag=True
 
-# Flag, which instances should be run (full,infl,dyn)
-L.coupling_instances={'full':True,'infl':True,'dyn':True}
+# Flag, which instances should be run (full,infl,dyn,meanfield)
+L.coupling_instances={'full':True,'infl':True,'dyn':True,'mean_field':True}
 
-# Flag, if the dyn only case should be derived via a mean-field
-L.dyn_meanfield=True
+# Placeholder flag for mean field dynamics
+L.dyn_meanfield=None
 
 # sets the final value for the disposition function (yb_final==0.0 is full transition)
-L.yb_final=0.5
+L.yb_final=1.5
 
 #  Number of nodes
-L.N = 1000
+L.N = 500
 
 #  Mean degree preference
 L.mean_degree_pref = 10 # as it is stated in cf08
@@ -65,8 +72,8 @@ smoking_weight=.1*smoking_mobility
 L.char_weight=(0,smoking_weight,(1-smoking_weight))
 
 #  Number of hysteresis iterations
-L.n_transition = 1000
-L.n_initial_eq_it=200
+L.n_transition = 100
+L.n_initial_eq_it=10
 L.n_trans_eq_post=0
 L.n_iterations=L.n_transition+L.n_trans_eq_post
 
@@ -74,15 +81,14 @@ L.n_iterations=L.n_transition+L.n_trans_eq_post
 Parameters only relevant for the transition_flag==True case 
 """
 
-# Flag, if betweeneess and closeness should be recorded calculated transient online (slow)
+# Flag, if betweeneess and closeness should be recorded calculated transient online (slower)
 L.calc_full_centr_measures=True
 
-# Sets the level of degree up to which conditional probability should be derived (max 5)
-# warning, the larger, the slower
+# Sets the level of degree up to which conditional probability should be derived (max 5, the larger, the slower)
 L.cond_prob_degree=5
 
 # number of snapshots of the full nw
-nw_snapshots=10
+nw_snapshots=2
 L.nw_save_steps=int(L.n_iterations/nw_snapshots)
 
 """
@@ -114,20 +120,5 @@ def master():
 		out+=1	
 
 mpi.run()
-
-
-# no_runs=len(glob.glob('nw_snaps_trans_smok*pkl'))
-# for run_no in xrange(no_runs):
-# 	#run_no=str(0)
-# 	nwdi=np.load('nw_snaps_trans_smok_'+str(run_no)+'.pkl')
-# 	prop_dict=np.load('trans_smok_'+str(run_no)+'.pkl')
-# 	for ts in (0,900):#nwdi.iterkeys():
-# 		# ts=0
-# 		sm_mat=np.zeros(1000)
-# 		smokers=prop_dict['full']['smokers'][ts]
-# 		sm_mat[smokers]=1
-# 		nw=Network(adjacency=nwdi[ts])
-# 		nw.set_node_attribute('smoker',sm_mat)
-# 		nw.save('nw_snapshot_run_'+str(run_no)+'_timestep_'+str(ts)+'.graphml',format='graphml')
 
 

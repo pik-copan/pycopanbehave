@@ -6,7 +6,7 @@
 #          Carl-Friedrich Schleussner <schleussner@pik-potsdam.de>
 # https://github.com/pik-copan/pycopanbehave
 
-SUPPORT FUNCTIONS
+SUPPORT FUNCTION TO DERIVE PERCENTILES FROM INDIVDUAL MODEL OUTPUT 
 """
 
 import sys
@@ -18,10 +18,10 @@ import pickle
 import scipy.stats
 
 # SET INPUT PATH OF ENSEMBLE SIMULATIONS
-path =''#'/scratch/01/carls/social/emulation/ens_rc_p25_ens_100/'
+path ='ens_members/'
 
 
-run_reps=glob.glob('trans_smok*')
+run_reps=glob.glob(path+'trans_smok*')
 ensemble_size=len(run_reps)
 ens_dic={}
 full_dict={}
@@ -41,7 +41,7 @@ no_connected_list=[]
 folder='ens'
 dict_disconnected[folder]={}
 for run in xrange(ensemble_size):
-	pkl_file=open('trans_smok_%s.pkl'%(run),'rb')            
+	pkl_file=open(path+'trans_smok_%s.pkl'%(run),'rb')            
 	read_in=pickle.load(pkl_file)
 	print run
 	for active_key in read_in.iterkeys():

@@ -2,13 +2,15 @@
 # -*- coding: utf-8 -*-
 
 """
-# Smoking Transition -- A plug for the pynamic society model to emulate smoking behaviour on 
-# social networks as investigated by 
+# Smoking Transition -- A plug for the pynamic society model to emulate smoking behaviour
 #
 # Copyright (C) 2013 Potsdam Institute for Climate Impact Research
 # Authors: Jonathan F. Donges <donges@pik-potsdam.de>,
 #          Carl-Friedrich Schleussner <schleussner@pik-potsdam.de>
-# URL: <http://www.pik-potsdam.de/members/donges/software>
+# https://github.com/pik-copan/pycopanbehave
+
+MAIN FUNCTIONS FOR SMOKING BEHAVIOUR TRANSITION SIMULATIONS
+
 """
 
 #
@@ -27,27 +29,21 @@ import igraph
 #  Import progressbar
 import progressbar
 
-# Add repository path of the model core
-import sys
-
-sys.path.append('/Users/carls/Documents/PIK/git_repos/pynamic-society/bin')
-sys.path.append('/Users/carls/Documents/PIK/git_repos/pynamic-society/')
-sys.path.append('/Users/carls/Documents/PIK/git_repos/')
-sys.path.append('/home/carls/git_repos/pynamic-society/bin')
-sys.path.append('/home/carls/git_repos/pynamic-society/')
-sys.path.append('/home/carls/git_repos/')
-
-from pygeonetwork import Network
-
-#  Import DynamicSocietyModel class from pydynamicsociety
-from pysoc import DynamicSocietyModel
-
-from pygeonetwork import mpi
-
 import pickle
 
 import scipy.stats
 import scipy.integrate as integ
+
+# Add repository path of the model core
+import sys
+
+sys.path.append('../')
+
+# Import pyunicorn dependencies
+from pyunicorn import mpi,Network
+
+#  Import DynamicSocietyModel class from pydynamicsociety
+from pysoc import DynamicSocietyModel
 
 class Bunch(dict):
     """Bunch object"""
@@ -223,10 +219,10 @@ def calc_cond_prob(smokers,nw_full,deg_sep_max,N):
 		smoking_dep=[]
 		for node in smokers:
 			#print 'node',node
-			distance_matrix=nw_full.get_path_lengths()	
+			distance_matrix=nw_full.path_lengths()	
 			acquaintance_one=np.where(distance_matrix[node,:]==deg_sep)
 			if acquaintance_one[0].size>0:
-				smoking_dep.append(np.sum(nw_full.get_node_attribute('smoker')[acquaintance_one])/float(acquaintance_one[0].size)/(float(len(smokers))/N)-1)
+				smoking_dep.append(np.sum(nw_full.node_attribute('smoker')[acquaintance_one])/float(acquaintance_one[0].size)/(float(len(smokers))/N)-1)
 		rcp[i]=np.mean(smoking_dep)
 	return rcp
 
@@ -272,7 +268,7 @@ def derive_nw_chars(outdic,model_trans,kolm_smir_trans,L,i=0):
 
 	#######
 	# derive max smoker cluster size
-	ts_adj=model_trans.get_acquaintance_network().get_adjacency()
+	ts_adj=model_trans.get_acquaintance_network().adjacency
 	sm_mat=np.zeros(1000)
 	sm_mat[smokers]=1
 	smok=np.asarray(sm_mat,dtype='bool')
@@ -287,26 +283,26 @@ def derive_nw_chars(outdic,model_trans,kolm_smir_trans,L,i=0):
 	except: print 'conditional prob calc failed'
 
 	#write output network chars
-	outdic['mean_degree'][i]=model_trans.get_acquaintance_network().get_degree().mean()
-	outdic['clustering'][i]=model_trans.get_acquaintance_network().get_global_clustering()
+	outdic['mean_degree'][i]=model_trans.get_acquaintance_network().degree().mean()
+	outdic['clustering'][i]=model_trans.get_acquaintance_network().global_clustering()
 	outdic['kolm_smir'][i]=kolm_smir_trans
-	outdic['apl'][i]=model_trans.get_acquaintance_network().get_average_path_length()
+	outdic['apl'][i]=model_trans.get_acquaintance_network().average_path_length()
 	outdic['conditional_prob'][i,:]=calc_cond_prob(smokers[0],model_trans.get_acquaintance_network(),L.cond_prob_degree,L.N)
 	#print 'apl', outdic['apl'][i]
 	outdic['centrality']['smoker'][i]=np.mean(np.asarray(model_trans.get_acquaintance_network().graph.evcent(scale=False))[smokers])
 	outdic['centrality']['non_smoker'][i]=np.mean(np.asarray(model_trans.get_acquaintance_network().graph.evcent(scale=False))[non_smokers])
 
 	if L.calc_full_centr_measures == True:
-		outdic['betweenness']['smoker'][i]=np.mean(model_trans.get_acquaintance_network().get_betweenness()[smokers])
-		outdic['betweenness']['non_smoker'][i]=np.mean(model_trans.get_acquaintance_network().get_betweenness()[non_smokers])
-		outdic['closeness']['smoker'][i]=np.mean(model_trans.get_acquaintance_network().get_closeness()[smokers])
-		outdic['closeness']['non_smoker'][i]=np.mean(model_trans.get_acquaintance_network().get_closeness()[non_smokers])
-		degree_matrix=model_trans.get_acquaintance_network().get_degree()
+		outdic['betweenness']['smoker'][i]=np.mean(model_trans.get_acquaintance_network().betweenness()[smokers])
+		outdic['betweenness']['non_smoker'][i]=np.mean(model_trans.get_acquaintance_network().betweenness()[non_smokers])
+		outdic['closeness']['smoker'][i]=np.mean(model_trans.get_acquaintance_network().closeness()[smokers])
+		outdic['closeness']['non_smoker'][i]=np.mean(model_trans.get_acquaintance_network().closeness()[non_smokers])
+		degree_matrix=model_trans.get_acquaintance_network().degree()
 		outdic['degree']['smoker'][i]=np.mean(degree_matrix[smokers])
 		outdic['degree']['non_smoker'][i]=np.mean(degree_matrix[non_smokers])
-		outdic['ind_clustering']['smoker'][i]=np.mean(model_trans.get_acquaintance_network().get_local_clustering()[smokers])
-		outdic['ind_clustering']['non_smoker'][i]=np.mean(model_trans.get_acquaintance_network().get_local_clustering()[non_smokers])
-		disc_node=(np.where(np.isinf(model_trans.get_acquaintance_network().get_path_lengths()[1,:])==True)[0])
+		outdic['ind_clustering']['smoker'][i]=np.mean(model_trans.get_acquaintance_network().local_clustering()[smokers])
+		outdic['ind_clustering']['non_smoker'][i]=np.mean(model_trans.get_acquaintance_network().local_clustering()[non_smokers])
+		disc_node=(np.where(np.isinf(model_trans.get_acquaintance_network().path_lengths()[1,:])==True)[0])
 		outdic['no_disconnected_nodes'][i]=disc_node.shape[0]
 
 	# print i, 'i'
@@ -377,13 +373,16 @@ def transition(char_feedback,dynamic,model_initial,L,out):
 	######################
 	# run_script
 	######################
-	
 	if 	char_feedback==True:
 		if dynamic== True:
 			print '############## RUN FULLY COUPLED'
 			nw_snapshots_dic={}
 		else: print '############## RUN SOCIAL INFLUENCE ONLY'
-	else: print '############## RUN DYNAMIC ONLY'
+	else: 
+		if L.dyn_meanfield:
+			print '############## RUN MEAN FIELD FORCING'
+		else:
+			print '############## RUN DYNAMIC ONLY'
 	
 	######################
 	# derive the final distribution
@@ -403,7 +402,7 @@ def transition(char_feedback,dynamic,model_initial,L,out):
 		if L.transition_flag==True:
 			if i<L.n_transition:
 				yb=3.-(3.-L.yb_final)*(float(i+1)/L.n_transition)
-				print 'yb',yb,i
+				# print 'yb',yb,i
 				char_dist=model_trans.get_char_distribution()[0,:]
 				char_dist_step,kolm_smir_trans,improvement_random_process=transient_disposition_distribution(L.N,char_dist,yb,kolm_smir_trans,L.transition_flag)
 				model_trans.set_char_distribution(char_dist_step,0)
@@ -438,7 +437,7 @@ def transition(char_feedback,dynamic,model_initial,L,out):
 		#######################################################################################################
 
 		if (char_feedback&dynamic==True) and (i==L.n_iterations-1 or i in np.arange(0,L.n_iterations,L.nw_save_steps,dtype='int')):
-			nw_snapshots_dic[i]=(model_trans.get_acquaintance_network().get_adjacency())
+			nw_snapshots_dic[i]=(model_trans.get_acquaintance_network().adjacency)
 
 	if (char_feedback&dynamic==True):
 		if L.transition_flag: output = open(L.output_path+'/nw_snaps_trans_smok_%s.pkl'%(out), 'wb')
@@ -463,12 +462,19 @@ def do_one(out,L):
 	
 	model_initial= generate_eq(L)
 	out_dic_2x2={}
+	
 	if L.coupling_instances['full']:
 		out_dic_2x2['full']=transition(True,True,model_initial,L,out)
 	if L.coupling_instances['infl']:
 		out_dic_2x2['infl']=transition(True,False,model_initial,L,out)
 	if L.coupling_instances['dyn']:
+		# Flag setting the mean field for dynamical forcing, historically coupled to the dyn case
+		L.dyn_meanfield=False
 		out_dic_2x2['dyn']=transition(False,True,model_initial,L,out)
+	if L.coupling_instances['mean_field']:
+		# Flag setting the mean field for dynamical forcing, historically coupled to the dyn case
+		L.dyn_meanfield=True
+		out_dic_2x2['mean_field']=transition(False,True,model_initial,L,out)
 		
 	if L.transition_flag: output = open(L.output_path+'/trans_smok_%s.pkl'%(out), 'wb')
 	else: output = open(L.output_path+'/eq_yb_%s_%s.pkl'%(L.yb_final,out), 'wb')
@@ -476,28 +482,3 @@ def do_one(out,L):
 	output.close()
 
 	
-
-
-""""
-#llrun -g tumble -t 20 cpy transition_smoking_mpi.py
-
-Generate LoadL script and run MPI code
-Usage: llrun -t NUM [OPTIOL...] MPIPROGRAM
-       -h        Show this help message
-       -N        Job name
-       -t        Total number of MPI tasks (obligatory)
-       -n        Number of nodes
-       -c        LoadL class (default = short)
-       -C colour Cluster colour (blue or green, default = unset)
-       -M memory Use specified memory per node in kB
-                 (not more than 29360128, default = unset)
-       -W        Maximum wall clock time
-       -i        Run with itcpin instrumentation
-       -g group  User group of the project (default = ff4)
-       -d        Execution directory, if different from $PWD
-       -e        Environment variables to be passed to the MPI tasks
-                 (example -e "TEST_ENV_VAR=is_set")
-       -o        Name of the output file for the LoadL script
-                 (if specified, job will no be submitted, if not specified,
-                 job will be submitted and LoadL script will be removed)
-"""
