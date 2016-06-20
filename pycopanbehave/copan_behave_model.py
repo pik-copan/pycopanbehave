@@ -43,9 +43,9 @@ class CopanBehaveModel(object):
 	#  Class methods
 	#
 
-	def __init__(self, background_proximity_matrix, char_distribution,
+	def __init__(self, background_proximity_matrix, agent_characteristics,agent_properties,
 	             initial_contact_network, interaction_probability_function, L,
-	             char_feedback=True, dynamic=True, degree_preference=None):
+	             coupling_instance='full', degree_preference=None):
 		"""
 		Constructor of CopanBehaveModel class.
 
@@ -58,11 +58,14 @@ class CopanBehaveModel(object):
 		# Reference proximity to which the model is relaxed to
 		self._background_proximity_matrix = background_proximity_matrix.copy()
 
-		# Distribution of the individual characteristics
-		self._char_distribution = char_distribution.copy()
+		# Distribution of the endogenous individual characteristics 
+		self._agent_characteristics = agent_characteristics.copy()
+		
+		# Distribution of the exogenous individual properties 
+		self._agent_properties = agent_properties.copy()
 
 		# Flags if the character feedback is active or not
-		self._char_feedback = char_feedback
+		self._coupling_instance = coupling_instance
 
 		adjacency = initial_contact_network.adjacency
 		self._contact_network = Network(adjacency=adjacency, directed=False,
@@ -76,7 +79,6 @@ class CopanBehaveModel(object):
 
 		self._char_weight = L.char_weight
 
-		self._dynamic = dynamic
 
 		if degree_preference is not None:
 		    self._degree_preference = degree_preference.copy()
@@ -100,11 +102,17 @@ class CopanBehaveModel(object):
 	def get_background_proximity_matrix(self):
 	    return self._background_proximity_matrix
 
-	def get_char_distribution(self):
-	   return self._char_distribution
+	def get_agent_characteristics(self):
+	   return self._agent_characteristics
 
-	def set_char_distribution(self,new_chd, dimension):
-	   self._char_distribution[dimension,:]=new_chd
+	def set_agent_characteristics(self,new_chd,):
+	   self._agent_characteristics=new_chd
+
+	def get_agent_properties(self):
+	   return self._agent_properties
+
+	def set_agent_properties(self,new_chd):
+	   self._agent_properties=new_chd
 
 	def get_contact_network(self):
 	    return self._contact_network
@@ -116,7 +124,7 @@ class CopanBehaveModel(object):
     #  Model methods
     #
 
-	def get_proximity_matrix(self, char_distribution, char_weight,
+	def get_proximity_matrix(self, agent_characteristics, char_weight,
 							 background_proximity_matrix):
 		"""
 		Returns a proximity matrix based on distance between individual
@@ -127,7 +135,10 @@ class CopanBehaveModel(object):
 		for i in xrange(self._N):
 			# Calculate the distances based on the first two chars that apply
 			# to all nodes uniformly
-			distances[i,:] = char_weight[0] * np.abs(np.abs(char_distribution[0,:] - char_distribution[0,i]) - 1) + char_weight[1] * np.abs(np.abs(char_distribution[1,:] - char_distribution[1,i]) - 1)
+			distances[i,:] = char_weight[0] \
+				* np.abs(np.abs(agent_characteristics- agent_characteristics[i]) - 1) \
+				+ char_weight[1] \
+				* np.abs(np.abs(agent_characteristics - agent_characteristics[i]) - 1)
 
 		return distances + char_weight[2] * background_proximity_matrix
 
@@ -157,38 +168,32 @@ class CopanBehaveModel(object):
 
 			#  Obtain interaction network by randomly drawing
 			#  using interaction probabilities
-			interaction_network = self.get_interaction_network(
-												   interaction_probability)
+			interaction_network = self.get_interaction_network(interaction_probability)
 
-			# Interaction feedback on the individual characteristics
-			# if dyn_meanfield==True, also for the dyn only case a probabalistic switch is applied
-			if self._L.dyn_meanfield == True:
-				char_distribution = self.update_char_feedback(
-									     self._char_distribution,
+			# Implementation of the social influence scheme
+			if self._coupling_instance in ['full','infl','mean_field']:
+				agent_characteristics = self.update_social_influence(
+										 self._agent_characteristics,
+										 self._agent_properties,
 										 interaction_network)
 			else:
-				if self._char_feedback == True:
-					char_distribution = self.update_char_feedback(
-											 self._char_distribution,
-											 interaction_network)
-				else:
-					char_distribution = self._char_distribution
+				agent_characteristics = self._agent_characteristics
 
 			# Proximity matrix derived via linear combination of individual
 			# characteristics and background proximity structure
-			proximity_matrix = self.get_proximity_matrix(char_distribution,
+			proximity_matrix = self.get_proximity_matrix(agent_characteristics,
 											self._char_weight,
 							 				self._background_proximity_matrix)
 
 			#  Update contact network
-			if self._dynamic == True:
+			if self._coupling_instance in ['full','dyn','mean_field']:
 				contact_network = self.update_contact_network(contact_network,
 											proximity_matrix,
 											interaction_network,
 											degree_preference)
 
 		#  Update instance variables to iterated values
-		self._char_distribution = char_distribution
+		self._agent_characteristics = agent_characteristics
 		self._contact_network = contact_network
 		self._no_interactions = np.sum(interaction_network)
 
@@ -204,14 +209,14 @@ class CopanBehaveModel(object):
 		degree_preference = self.get_degree_preference()
 
 		#  Get individual characteristics distribution
-		char_distribution = self._char_distribution
+		agent_characteristics = self._agent_characteristics
 
 		#  Everyone interacts with everyone else
 		interaction_probability_matrix = np.ones((self._N, self._N))
 
 		#  Get proximity matrix from linear combination of distance in
 		#  individual characteristics and background proximity structure
-		proximity = self.get_proximity_matrix(char_distribution,
+		proximity = self.get_proximity_matrix(agent_characteristics,
 											self._char_weight,
 											self._background_proximity_matrix)
 
@@ -222,7 +227,7 @@ class CopanBehaveModel(object):
 											degree_preference)
 
 		#  Update instance variables to iterated values
-		self._char_distribution = char_distribution
+		self._agent_characteristics = agent_characteristics
 		self._contact_network = contact_network
 		self._no_interactions = np.sum(interaction_probability_matrix)
 
@@ -256,56 +261,54 @@ class CopanBehaveModel(object):
 	    #  Return adjacency matrix of interaction_probability network
 	    return (random_numbers <= interaction_probability_matrix).astype("int8")
 
-	def update_char_feedback(self, char_distribution,
+	def update_social_influence(self, agent_characteristics,agent_properties,
 							 interaction_network):
 		"""
-		Returns the updated individual characteristics.
+		Updated the agent characteristics following an Ising-type update scheme
 		"""
 		#  Initialize
-		char_distribution_update = char_distribution
+		agent_characteristics_update = agent_characteristics
 
-		#  Get vector of smoking behavior values
-		smoking_behavior = self.get_contact_network().node_attribute('smoker')
 		#  Compute share of smokers in the system
-		sm_share = float(sum(smoking_behavior)) / self._N
+		sm_share = agent_properties.sum() / self._N
 
-		#print 'sm_share',sm_share
-		for i in xrange(char_distribution.shape[1]):
+
+		# print 'agent_characteristics_update ini', sum(agent_characteristics_update)
+		for i in xrange(len(agent_characteristics)):
 			#  Get number of interactions of node i
 			nai = np.sum(interaction_network[i, :])
 
 			#  No update takes place when there are no interactions
 			if nai == 0:
-				char_distribution_update[:, i] = char_distribution[:, i]
+				agent_characteristics_update[i] = agent_characteristics[i]
 			#  Update of individual characteristics
 			else:
 				random_number = np.random.rand(1)
 				#  Update of characteristics is based on social influence by
 				#  the actual peers in interaction network
-				if self._char_feedback == True:
+				if self._coupling_instance in ['full','infl']:
 					#  Agent i is non-smoker
-					if char_distribution[1, i] == 0:
-						prob_flip = .1*char_distribution[0,i]*np.sum(interaction_network[i,:]*char_distribution[1,:])/nai
-						char_distribution_update[1,i] = (random_number <= prob_flip).astype("int8")
+					if agent_characteristics[i] == 0:
+						prob_flip = self._L.C*agent_properties[i]*np.sum(interaction_network[i,:]*agent_characteristics)/nai
+						agent_characteristics_update[i] = (random_number <= prob_flip).astype("int8")
 					#  Agent i is smoker
 					else:
-						prob_flip = .1*(1-char_distribution[0,i])*(1-np.sum(interaction_network[i,:]*char_distribution[1,:])/nai)
-						char_distribution_update[1,i] = 1-(random_number <= prob_flip).astype("int8")
+						prob_flip = self._L.C*(1-agent_properties[i])*(1-np.sum(interaction_network[i,:]*agent_characteristics)/nai)
+						agent_characteristics_update[i] = 1-(random_number <= prob_flip).astype("int8")
 
 				#  Mean field social influence for the dyn only case
-				else:
-					if self._L.dyn_meanfield:
-						#  Agent i is non-smoker
-						if char_distribution[1, i] == 0:
-							prob_flip = .1*char_distribution[0,i]*sm_share
-							char_distribution_update[1,i] = (random_number <= prob_flip).astype("int8")
-						#  Agent i is smoker
-						else:
-							prob_flip = .1*(1-char_distribution[0,i])*(1-sm_share)
-							char_distribution_update[1,i] = 1-(random_number <= prob_flip).astype("int8")
+				elif self._coupling_instance in ['mean_field']:
+					#  Agent i is non-smoker
+					if agent_characteristics[i] == 0:
+						prob_flip = self._L.C*agent_properties[i]*sm_share
+						agent_characteristics_update[i] = (random_number <= prob_flip).astype("int8")
+					#  Agent i is smoker
+					else:
+						prob_flip = self._L.C*(1-agent_properties[i])*(1-sm_share)
+						agent_characteristics_update[i] = 1-(random_number <= prob_flip).astype("int8")
 
-		# print np.sum(char_distribution_update[1,:]),np.sum(char_distribution_update[0,:])
-		return char_distribution_update
+		# print 'agent_characteristics_update after', sum(agent_characteristics_update)
+		return agent_characteristics_update
 
 	def update_contact_network(self, contact_network, proximity_matrix,
 							   interaction_network, degree_preference):

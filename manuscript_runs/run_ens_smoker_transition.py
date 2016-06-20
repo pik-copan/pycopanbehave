@@ -51,9 +51,6 @@ L.transition_flag = True
 L.coupling_instances = {'full':True, 'infl':True, 'dyn':True,
 						'mean_field':True}
 
-# Placeholder flag for mean field dynamics
-L.dyn_meanfield = None
-
 # Sets the final value for the disposition function (yb_final==0.0 is full transition)
 L.yb_final = 0.5
 
@@ -80,6 +77,11 @@ smoking_mobility = 2
 smoking_weight = .1 * smoking_mobility
 L.char_weight = (0, smoking_weight, (1 - smoking_weight))
 
+# Smoking behaviour switching probability scaling factor  scales the switching probability pi(t) of the smoking
+# behaviour. 
+# C controls the amplitude of equilibrium stochastic noise of the smoking behaviour that is introduced by the Ising-like implementation.
+L.C=0.1
+
 #  Number of hysteresis iterations
 L.n_transition = 1000
 L.n_initial_eq_it = 200
@@ -100,6 +102,8 @@ L.cond_prob_degree = 5
 # number of snapshots of the full nw
 nw_snapshots = 10
 L.nw_save_steps = int(L.n_iterations / nw_snapshots)
+
+
 
 #
 #  Parameters only relevant for the transition_flag==False case

@@ -34,6 +34,15 @@ import scipy.stats
 # SET INPUT PATH OF ENSEMBLE SIMULATIONS
 path =''#'/scratch/01/carls/social/emulation/ens_rc_p25_ens_100/'
 
+# LIST OF READ-OUT VARIABLES
+
+read_out_list=['clustering',
+ 'conditional_prob',
+ 'degree',
+ 'no_of_smokers',
+ 'apl',
+ 'centrality',
+ 'disp_distr']
 
 run_reps=glob.glob('trans_smok*')
 ensemble_size=len(run_reps)
@@ -61,7 +70,8 @@ for run in xrange(ensemble_size):
 	print run
 	for active_key in read_in.iterkeys():
 
-		for active_var in read_in[active_key].iterkeys():
+		# for active_var in read_in[active_key].iterkeys():
+		for active_var in read_out_list:
 			#print active_var, active_key
 			if active_var=='centrality_smokers_connected':
 				if active_key=='full':
@@ -104,6 +114,8 @@ for run in xrange(ensemble_size):
 #############################
 
 print 'DERIVE ENSEMBLE PERCENTILES'
+
+# output_variables=['conditional_prob','degree','no_of_smokers','centrality']
 
 ave_dic={}
 for active_var in summary_dic.iterkeys():
@@ -201,10 +213,10 @@ for active_var in run_sum_dict.iterkeys():
 # SAVE OUTPUT
 #############################
 
-output = open('median_trans_smok.pkl', 'wb')
-pickle.dump(ave_dic, output)
-output.close()
-ens_dic=ave_dic
+# # output = open('median_trans_smok.pkl', 'wb')
+# # pickle.dump(ave_dic, output)
+# # output.close()
+# ens_dic=ave_dic
 full_dict=summary_dic
 
 output = open('full_trans_smok.pkl', 'wb')
@@ -212,7 +224,7 @@ pickle.dump(full_dict, output)
 output.close()
 
 output = open('ens_trans_smok.pkl', 'wb')
-pickle.dump(ens_dic, output)
+pickle.dump(ave_dic, output)
 output.close()
 
 output = open('final_reduction.pkl', 'wb')
