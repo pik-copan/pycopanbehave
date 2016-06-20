@@ -93,7 +93,6 @@ def rejection_sampling(N, distribution_function_ini, yb):
 
 	return result[0,:],result[1,:]
 
-
 def interaction_probability_function(distance_metric_matrix, L):
 	"""
 	Returns the interaction probability matrix given a distance metric on the
@@ -118,8 +117,7 @@ def interaction_probability_function(distance_metric_matrix, L):
 	#exp_dec=np.exp(-(distance_metric_matrix-1)/2.)
 	return exp_dec
 
-def transient_disposition_distribution(N, disp_distr_t, yb, kolm_smir,
-									   transition_flag):
+def transient_disposition_distribution(N, disp_distr_t, yb):
 	"""
 	This function governs the transition between two distributions.
 
@@ -130,7 +128,7 @@ def transient_disposition_distribution(N, disp_distr_t, yb, kolm_smir,
 	The target is set to 0.1, which is equivalent to the value one gets
 	for random sampling from the given distribution.
 
-	The noise added is lognormal distributed (fat-tailed) to allow for
+	The noise added is lognormal distributed to allow for
 	long-range jumps and scaled with the deviation of the actual distribution
 	to the ideal curve. The greater the positive deviation, the greater the
 	noise.
@@ -170,10 +168,6 @@ def transient_disposition_distribution(N, disp_distr_t, yb, kolm_smir,
 	distr_dev=distr_dev/50
 	distr_dev+=np.abs(distr_dev.min())
 	logn_std=1.
-
-	if transition_flag == False:
-		# incremental improvement for the non-transient case
-		target=kolm_smir
 	while kolm_smir_step >= target:
 		# generate random lognormal dist and sign
 		random_noise_increase = np.random.lognormal(0, logn_std, N)
@@ -196,9 +190,8 @@ def transient_disposition_distribution(N, disp_distr_t, yb, kolm_smir,
 			n_inc+=1
 			if n_inc>10:
 				print 'DISTRIBUTION TRANSITION FAILED', 'kolm_smir_step',kolm_smir_step, 'yb', yb
-				return disp_distr_t,kolm_smir_step,improvement
-	return disp_distr_tp1,kolm_smir_step,improvement
-
+				return disp_distr_t
+	return disp_distr_tp1
 
 def generate_initial_distance_sm(L):
 	"""
@@ -232,7 +225,6 @@ def generate_initial_distance_sm(L):
 
 	return proximity_small_world
 
-
 def calc_cond_prob(smokers, nw_full, deg_sep_max, N):
 	"""
 	Add docstring!
@@ -250,14 +242,12 @@ def calc_cond_prob(smokers, nw_full, deg_sep_max, N):
 		rcp[i]=np.mean(smoking_dep)
 	return rcp
 
-def derive_nw_chars(outdic, model_trans, kolm_smir_trans, L, i=0):
+def derive_nw_chars(outdic,model_trans, L, i=0):
 	"""
 	Add docstring!
 	"""
-	if outdic.has_key('smokers')==False:
-		l=1
-		if L.transition_flag:
-			l=L.n_iterations
+	if i==0:		
+		l=L.n_iterations
 		# Initialize list of full output variables implemented
 		nw_chars_keylist=['no_interactions',
 					'cogn_diss_coeff',
@@ -307,12 +297,14 @@ def derive_nw_chars(outdic, model_trans, kolm_smir_trans, L, i=0):
 	########################################################################################################
 	# write output model chars
 	smokers=np.where(model_trans.get_agent_characteristics()==1)[0]
+
 	non_smokers=np.where(model_trans.get_agent_characteristics()==0)[0]
 	if 'no_interactions' in outdic:
 		outdic['no_interactions'][i]=model_trans._no_interactions
 	if 'contact_change' in outdic:
 		outdic['contact_change'][i]=model_trans._new_edges
 	if 'no_of_smokers' in outdic:
+		# print 'smokers',len(smokers)
 		outdic['no_of_smokers'][i]=len(smokers)
 	if 'cogn_diss_coeff' in outdic:
 		outdic['cogn_diss_coeff'][i]=np.mean(np.abs(model_trans.get_agent_characteristics()-model_trans.get_agent_properties()))
@@ -384,7 +376,7 @@ def generate_eq(L):
 	no_components=2
 	while no_components !=1:
 
-		agent_properties,agent_characteristics= rejection_sampling(L.N, distribution_function,3.)
+		agent_properties,agent_characteristics= rejection_sampling(L.N, distribution_function,L.yb_initial)
 		#  Degree preference distribution
 		degree_preference = np.random.normal(L.mean_degree_pref, L.std_degree_pref, L.N).astype("int8")
 
@@ -427,18 +419,9 @@ def generate_eq(L):
 		no_components= len(clusters[0])+len(clusters)-L.N
 		print '################# Number of components initial network #################'
 		print no_components, len(clusters)
-
-		# check for feasibility of the transient disp distr
-		# if kolm_smir_trans initial> 0.1 than the procedure fails
-		kolm_smir_trans=0.
-		char_dist=model_initial.get_agent_properties()
-		char_dist,kolm_smir_trans,improvement_random_process=transient_disposition_distribution(L.N,char_dist,L.yb_initial,kolm_smir_trans,L.transition_flag)
-		if kolm_smir_trans>0.1:
-			print 'initial transition test failed'
-			no_components+=10**6
 	return model_initial
 
-def transition(coupling_instance, model_initial, L, out):
+def transition(coupling_instance, model_initial, L, out,char_dist):
 	"""
 	Add docstring!
 	"""
@@ -455,8 +438,6 @@ def transition(coupling_instance, model_initial, L, out):
 	# Derive the final distribution
 	######################
 
-	kolm_smir_trans = 1
-	improvement_random_process = True
 	print 'transient part'
 	model_trans.get_contact_network().set_node_attribute('smoker',model_trans.get_agent_characteristics())
 	output_dict={}
@@ -467,57 +448,30 @@ def transition(coupling_instance, model_initial, L, out):
 		#	TRANSIENT CHANGE OF THE SMOKING DISPOSITION
 		###############################################################
 
-		if L.transition_flag == True:
-			if i < L.n_transition:
-				yb = 3. - (3.-L.yb_final)*(float(i+1)/L.n_transition)
-				char_dist=model_trans.get_agent_properties()
-				char_dist_step,kolm_smir_trans,improvement_random_process=transient_disposition_distribution(L.N,char_dist,yb,kolm_smir_trans,L.transition_flag)
-				model_trans.set_agent_properties(char_dist_step)
+		model_trans.set_agent_properties(char_dist[i,:])
+		if coupling_instance=='dyn':
+			model_trans.set_agent_characteristics(np.round(model_trans.get_agent_properties(),0))
 
-				if coupling_instance=='dyn':
-					model_trans.set_agent_characteristics(np.round(model_trans.get_agent_properties(),0))
-					#print np.round(model_trans.get_char_distribution()[0,:10],0)
+		##############################################################
+		model_trans.iterate(1)
+		model_trans.get_contact_network().set_node_attribute('smoker',model_trans.get_agent_characteristics().copy())
+		output_dict=derive_nw_chars(output_dict,model_trans,L,i)
 
-			##############################################################
-			model_trans.iterate(1)
-			model_trans.get_contact_network().set_node_attribute('smoker',model_trans.get_agent_characteristics().copy())
-			#print 'no of smokers',sum(model_trans.get_agent_characteristics())
-			output_dict=derive_nw_chars(output_dict,model_trans,kolm_smir_trans,L,i)
-
-		###############################################################
-		#	ABRUPT CHANGE OF THE SMOKING DISPOSITION
-		###############################################################
-
-		else:
-			char_dist=model_trans.get_agent_properties()
-			if kolm_smir_trans>0.1:
-				char_dist_step,kolm_smir_trans,improvement_random_process=transient_disposition_distribution(L.N,char_dist,L.yb_final,kolm_smir_trans,L.transition_flag)
-				model_trans.set_agent_properties(char_dist_step)
-			if coupling_instance=='dyn':
-				model_trans.set_agent_properties(np.round(model_trans.get_agent_properties()),1)
-			print 'no of smokers',sum(model_trans.get_agent_characteristics())
-			print 'kolm_smir_trans',kolm_smir_trans
-			##############################################################
-			model_trans.iterate(1)
-			model_trans.get_contact_network().set_node_attribute('smoker',model_trans.get_agent_characteristics().copy())
 
 		#######################################################################################################
 		# SAVE NETWORK INSTANCES
 		#######################################################################################################
 
-	# 	# if (coupling_instance=='full') and (i==L.n_iterations-1 or i in np.arange(0,L.n_iterations,L.nw_save_steps,dtype='int')):
-	# 	# 	nw_snapshots_dic[i]=(model_trans.get_contact_network().adjacency)
+		if (coupling_instance=='full') and (i==L.n_iterations-1 or i in np.arange(0,L.n_iterations,L.nw_save_steps,dtype='int')) and (L.write_full_output_to_file):
+			nw_snapshots_dic[i]=(model_trans.get_contact_network().adjacency)
 
-	# if coupling_instance=='full':
-	# 	if L.transition_flag: output = open(L.output_path+'/nw_snaps_trans_smok_%s.pkl'%(out), 'wb')
-	# 	else: output = open(L.output_path+'/nw_snaps_eq_yb_%s_%s.pkl'%(L.yb_final,out), 'wb')
-	# 	pickle.dump(nw_snapshots_dic, output)
-	# 	output.close()
+	if (coupling_instance=='full') and (L.write_full_output_to_file):
 
-	if L.transition_flag==True:
-		return output_dict
-	else:
-		return derive_nw_chars(output_dict,model_trans,kolm_smir_trans,L)
+		output = open(L.output_path+'/nw_snaps_eq_yb_%s_%s.pkl'%(L.yb_final,out), 'wb')
+		pickle.dump(nw_snapshots_dic, output)
+		output.close()
+
+	return output_dict
 
 def do_one(out,L):
 	"""
@@ -527,27 +481,44 @@ def do_one(out,L):
 
 	####################################################################################################################################
 	#
-	#  Main script
+	#  MAIN SCRIPT
 	#
 	####################################################################################################################################
 
+	# INITIALIZE NETWORK INSTANCE
 	model_initial = generate_eq(L)
 	out_dic_2x2 = {}
 
+	###############################################################
+	#	TRANSIENT CHANGE OF THE SMOKING DISPOSITION
+	###############################################################
+	char_dist=np.empty(((L.n_iterations,L.N)))
+	char_dist[0,:]=model_initial.get_agent_properties()
+	kolm_smir_trans = 1
+	improvement_random_process = True
+	for i in xrange(1,L.n_transition):
+		yb = L.yb_initial - (L.yb_initial-L.yb_final)*(float(i+1)/L.n_transition)
+		char_dist[i,:]=transient_disposition_distribution(L.N,char_dist[i-1,:],yb)
+	if L.write_char_disposition:
+		output = open(L.output_path+'/chararacter_disposition_%s.pkl'%(out), 'wb')
+		pickle.dump(char_dist, output)
+		output.close()
+
+	print '############## SMOKING DISPOSITION MATRIX SUCCESSFULLY CREATED'
+
 	if L.coupling_instances['full']:
 		print '############## RUN FULLY COUPLED'
-		out_dic_2x2['full']=transition('full',model_initial,L,out)
+		out_dic_2x2['full']=transition('full',model_initial,L,out,char_dist)
 	if L.coupling_instances['infl']:
 		print '############## RUN SOCIAL INFLUENCE ONLY'
-		out_dic_2x2['infl']=transition('infl',model_initial,L,out)
+		out_dic_2x2['infl']=transition('infl',model_initial,L,out,char_dist)
 	if L.coupling_instances['dyn']:
 		print '############## RUN DYNAMIC ONLY'
-		out_dic_2x2['dyn']=transition('dyn',model_initial,L,out)
+		out_dic_2x2['dyn']=transition('dyn',model_initial,L,out,char_dist)
 	if L.coupling_instances['mean_field']:
 		print '############## RUN MEAN FIELD FORCING'
-		out_dic_2x2['mean_field']=transition('mean_field',model_initial,L,out)
+		out_dic_2x2['mean_field']=transition('mean_field',model_initial,L,out,char_dist)
 
-	if L.transition_flag: output = open(L.output_path+'/trans_smok_%s.pkl'%(out), 'wb')
-	else: output = open(L.output_path+'/eq_yb_%s_%s.pkl'%(L.yb_final,out), 'wb')
+	output = open(L.output_path+'/trans_smok_%s.pkl'%(out), 'wb')
 	pickle.dump(out_dic_2x2, output)
 	output.close()
