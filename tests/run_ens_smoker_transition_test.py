@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Smoking Transition -- A use case of the COPAN:BEHAVE model to emulate
-changes in smoking behaviour
+pycopanbehave -- An adaptive network mode of behaviour selection in Python
 
 Copyright (C) 2011--2016 Potsdam Institute for Climate Impact Research
 Authors: Jonathan F. Donges <donges@pik-potsdam.de>,
@@ -32,7 +31,7 @@ from ens_smoking_transition import *
 
 output_path = './ens_members/'
 
-# Check if output path exists
+#check if output path exists
 if os.path.exists(output_path) == False:
 	os.mkdir(output_path)
 
@@ -40,38 +39,29 @@ if os.path.exists(output_path) == False:
 # Namelist as a Bunch dictionary
 L = Bunch()
 
-#
-#  Parameter settings
-#
-
 L.output_path = output_path
 
-# Ensemble size (number of realizations of model time evolution)
-L.n_ensemble = 3
+#  Ensemble size (number of realizations of model time evolution)
+L.n_ensemble = 100
 
-# Flag, if a transition from the initial to the final distribution of
-# smoking disposition should take place. If false, the final distribution
-# will be applied directly
-L.transition_flag = True
+# Flag, if a transition from the initial to the final distribution should take place. If false, the final distribution will be applied directly
 
-# Flag, which instances should be run (full, infl, dyn, meanfield)
+# Flag, which instances should be run (full,infl,dyn,meanfield)
 L.coupling_instances = {'full':True, 'infl':True, 'dyn':True,
 						'mean_field':True}
 
-# Placeholder flag for mean field dynamics
-L.dyn_meanfield = None
 
-# Sets the final value for the smoking disposition function
-# (yb_final = 0.0 is full transition)
-L.yb_final = 1.5
+# Sets the initial value for the disposition function (3.0 is set to be 50-50)
+L.yb_initial = 3.0
+# Sets the final value for the disposition function (yb_final==0.0 is full transition)
+L.yb_final = 0.5
 
 #  Number of nodes
-L.N = 500
+L.N = 1000
 
-# Mean degree preference (value as stated in Christakis and Fowler, The
-# New England Journal of Medicine 358, 2008)
-L.mean_degree_pref = 10
-# Degree preference standard deviation
+#  Mean degree preference
+L.mean_degree_pref = 10 # as it is stated in cf08
+#  Degree preference standard deviation
 L.std_degree_pref = 3
 
 # Rewiring probability of the underlying proximity
@@ -84,39 +74,48 @@ L.p_ai = .8
 # Offset that sets a basic interaction probability with all agents
 L.interaction_offset = 0.03
 
-# Sets the mobility with regard to the underlying proximity structure
-# in positions
+# Sets the mobility with regard to the underlying proximity structure in positions
 smoking_mobility = 2
 smoking_weight = .1 * smoking_mobility
 L.char_weight = (0, smoking_weight, (1 - smoking_weight))
 
+# Smoking behaviour switching probability scaling factor  scales the switching probability pi(t) of the smoking
+# behaviour. 
+# C controls the amplitude of equilibrium stochastic noise of the smoking behaviour that is introduced by the Ising-like implementation.
+L.C=0.1
+
 #  Number of hysteresis iterations
-L.n_transition = 100
-L.n_initial_eq_it = 10
+L.n_transition = 1000
+L.n_initial_eq_it = 200
 L.n_trans_eq_post = 0
 L.n_iterations = L.n_transition + L.n_trans_eq_post
 
 #
-# Parameters only relevant for the transition_flag==True case
+# Variables that sets whether or not full output should be stored for each ensemble member (default: false)
 #
+L.write_full_output_to_file=False
+L.write_char_disposition=False
 
-# Flag, if betweeneess and closeness should be recorded calculated transient online (slower)
-L.calc_full_centr_measures = True
+#
+# Relevant variables to be stored in any case, with write_full_output_to_file==False
+#
+L.variables_out=['clustering',
+ 'conditional_prob',
+ 'degree',
+ 'no_of_smokers',
+ 'apl',
+ 'centrality']
 
-# Sets the level of degree up to which conditional probability should be derived (max 5, the larger, the slower)
+
+# Sets the level of degree up to which conditional probability should be derived (max 5)
+# warning, the larger, the slower
 L.cond_prob_degree = 5
 
 # number of snapshots of the full nw
-nw_snapshots = 2
+nw_snapshots = 1
 L.nw_save_steps = int(L.n_iterations / nw_snapshots)
 
-#
-# Parameters only relevant for the transition_flag==False case
-#
 
-discrete_stops_over_interval = 20
-
-yb_initial = 3.0
 
 ####################################################################################################################################
 #
@@ -127,16 +126,10 @@ yb_initial = 3.0
 
 def master():
 	out = 0
-	if L.transition_flag:
-		for i in xrange(L.n_ensemble):
-			mpi.submit_call("do_one",(i,L),id=i)
-			out += 1
-	else:
-		paramrange=np.linspace(yb_initial,L.yb_final,discrete_stops_over_interval)
-		# for k in xrange(discrete_stops_over_interval):
-		# 	for i in xrange(L.n_ensemble):
-		L.yb_final = 3.0 #paramrange[k]
-		mpi.submit_call("do_one",(out,L),id=out)
+
+	for i in xrange(L.n_ensemble):
+		mpi.submit_call("do_one", (i,L), id=i)
 		out += 1
+
 
 mpi.run()
