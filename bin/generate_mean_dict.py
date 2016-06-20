@@ -34,15 +34,6 @@ import scipy.stats
 # SET INPUT PATH OF ENSEMBLE SIMULATIONS
 path =''#'/scratch/01/carls/social/emulation/ens_rc_p25_ens_100/'
 
-# LIST OF READ-OUT VARIABLES
-
-read_out_list=['clustering',
- 'conditional_prob',
- 'degree',
- 'no_of_smokers',
- 'apl',
- 'centrality',
- 'disp_distr']
 
 run_reps=glob.glob('trans_smok*')
 ensemble_size=len(run_reps)

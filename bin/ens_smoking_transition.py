@@ -254,7 +254,7 @@ def derive_nw_chars(outdic, model_trans, kolm_smir_trans, L, i=0):
 	"""
 	Add docstring!
 	"""
-	if 'outdic' not in locals():
+	if outdic.has_key('smokers')==False:
 		l=1
 		if L.transition_flag:
 			l=L.n_iterations
@@ -281,7 +281,7 @@ def derive_nw_chars(outdic, model_trans, kolm_smir_trans, L, i=0):
 		other_vars_list=['conditional_prob','disp_distr']
 
 		# Check, if full output should written or just selection
-		if write_full_output_to_file:
+		if L.write_full_output_to_file:
 			nw_chars_keylist_out=nw_chars_keylist
 			sm_chars_list_out=sm_chars_list
 			other_vars_list_out=other_vars_list
@@ -518,8 +518,6 @@ def transition(coupling_instance, model_initial, L, out):
 		return output_dict
 	else:
 		return derive_nw_chars(output_dict,model_trans,kolm_smir_trans,L)
-
-
 
 def do_one(out,L):
 	"""

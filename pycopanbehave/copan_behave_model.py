@@ -311,77 +311,72 @@ class CopanBehaveModel(object):
 		return agent_characteristics_update
 
 	def update_contact_network(self, contact_network, proximity_matrix,
-							   interaction_network, degree_preference):
-	    """
-	    Returns the updated contact network.
-	    """
-		#  Get old contact adjacency matrix
-	    old_contact_adjacency = contact_network.adjacency
+						   interaction_network, degree_preference):
+	"""
+	Returns the updated contact network.
+	"""
+	#  Get old contact adjacency matrix
+	old_contact_adjacency = contact_network.adjacency
 
-	    #  Get old degree k
-	    k = contact_network.degree()
+	#  Get old degree k
+	k = contact_network.degree()
 
-	    #  Initialize new contact network adjacency matrix
-	    contact_adjacency = np.zeros(old_contact_adjacency.shape, dtype="int8")
+	#  Initialize new contact network adjacency matrix
+	contact_adjacency = np.zeros(old_contact_adjacency.shape, dtype="int8")
 
-	    #  Initialize list of sorted indices
-	    potential_contact_indices = []
+	#  Initialize list of sorted indices
+	potential_contact_indices = []
 
-	    #  Loop over all agents
-	    for i in xrange(self._N):
-	        #  Get node indices of contacts
-	        contact_indices = np.where(old_contact_adjacency[i,:] == 1)[0]
+	#  Loop over all agents
+	for i in xrange(self._N):
+		#  Get node indices of contacts
+		contact_indices = np.where(old_contact_adjacency[i,:] == 1)[0]
 
-	        #  Agent i has contacts
-	        if k[i] != 0:
-	            #  Get node indices of interaction network
-	            interaction_probability_indices = np.where(interaction_network[i,:] == 1)[0]
+		#  Agent i has contacts
+		# if k[i] != 0:
+		#  Get node indices of interaction network
+		interaction_probability_indices = np.where(interaction_network[i,:] == 1)[0]
 
-	            #  Combine both lists of indices and discard repeated entries
-	            indices = list(np.unique(np.append(contact_indices,
-	                                   		interaction_probability_indices)))
+		#  Combine both lists of indices and discard repeated entries
+		indices = list(np.unique(np.append(contact_indices,
+		           		interaction_probability_indices)))
 
-	            #  Get proximity values of contacts and interaction_network
-	            similarities = proximity_matrix[i, indices]
+		#  Get proximity values of contacts and interaction_network
+		similarities = proximity_matrix[i, indices]
 
-	            indices = np.array(indices)
+		indices = np.array(indices)
 
-	            #  Get degree_preference[i] indices with largest similarities
-	            sorted_indices = indices[similarities.argsort()][-degree_preference[i]:]
+		#  Get degree_preference[i] indices with largest similarities
+		sorted_indices = indices[similarities.argsort()][-degree_preference[i]:]
 
-	            #  Get k indices with largest similarities
-	            potential_contact_indices.append(sorted_indices)
+		#  Get k indices with largest similarities
+		potential_contact_indices.append(sorted_indices)
 
-	        #  Agent i has no contacts
-	        else:
-	            potential_contact_indices.append([])
+		# #  Agent i has no contacts
+		# else:
+			# potential_contact_indices.append([])
 
-	    #  Keep only bidirectional potential new contacts
-	    for i in xrange(self._N):
-	        if k[i] != 0:
-	            #  Initialize
-	            filtered_indices = []
+	#  Keep only bidirectional potential new contacts
+	for i in xrange(self._N):
+		# if k[i] != 0:
+		#  Initialize
+		filtered_indices = []
 
-	            for j in potential_contact_indices[i]:
-	                if i in potential_contact_indices[j]:
-	                    filtered_indices.append(j)
+		for j in potential_contact_indices[i]:
+		    if i in potential_contact_indices[j]:
+		        filtered_indices.append(j)
 
-	            contact_adjacency[i,filtered_indices] = 1
+		contact_adjacency[i,filtered_indices] = 1
 
-	    #  Exclusively consider bidirectional contact preferences
-	    #contact_adjacency = contact_adjacency * contact_adjacency.transpose()
 
-	    #  Inclusively consider all bi- and unidirectional contact preferences
-	    #contact_adjacency = (contact_adjacency + contact_adjacency.transpose() > 0).astype("int8")
+	# return the no of changed changed contacts per turn (nodes can have edges with themselves, the diagonal is therefore removed)
+	self._new_edges = (np.sum(np.abs(old_contact_adjacency-contact_adjacency)) - np.sum(np.diag(np.abs(old_contact_adjacency-contact_adjacency)))) / 2
+	#print 'new edges:',np.sum((old_contact_adjacency-contact_adjacency))
 
-	    # return the no of changed changed contacts per turn (nodes can have edges with themselves, the diagonal is therefore removed)
-	    self._new_edges = (np.sum(np.abs(old_contact_adjacency-contact_adjacency)) - np.sum(np.diag(np.abs(old_contact_adjacency-contact_adjacency)))) / 2
-		#print 'new edges:',np.sum((old_contact_adjacency-contact_adjacency))
+	#print "Symmetry:", ((contact_adjacency - contact_adjacency.transpose())**2).sum()
 
-	    #print "Symmetry:", ((contact_adjacency - contact_adjacency.transpose())**2).sum()
+	#  Update contact Network object
+	contact_network.adjacency = contact_adjacency
 
-	    #  Update contact Network object
-	    contact_network.adjacency = contact_adjacency
-
-	    #  Return new contact network
-	    return contact_network
+	#  Return new contact network
+	return contact_network
