@@ -28,7 +28,8 @@ import matplotlib.pyplot as plt
 #  Initializations
 #
 
-input_file='trans_smok_output_full.pkl'
+input_file='full_trans_smok.pkl'
+# input_file='trans_smok_output_full.pkl'
 with open(input_file) as w:
     data = pickle.load(w)
 
@@ -39,11 +40,11 @@ to_plot = [1,2,3]
 set_titles = False
 smokers = data['no_of_smokers']
 decim = 1
-ci = 99
+ci = 66
 n_smokers = 1000.
-n_times = 800.
+start_time = 20.
 n_xticks = [0, 200, 400, 600, 790]
-ma_window_size = 10
+ma_window_size = 30
 keys = ['full', 'dyn', 'infl', 'mean_field']
 mapping = dict(zip(keys, ['coupled', 'network', 'interaction', 'mean-field']))
 colors_context = "#55247A", "#3368A5", "#D33C3E", '#37442A'
@@ -67,7 +68,7 @@ plt.rcParams.update({k: 2.2 for k in (
 )})
 
 #
-#  Define plotting functions
+#  DEFINE PLOTTING FUNCTIONS
 #
 
 def moving_average(values, window, axis):
@@ -92,18 +93,21 @@ def rescale(x, axis, method='percent'):
     Add docstring!
     """
     if method == 'divide':
-        x = x / x[:, 0:1, :]
+        x = x / x[:, 0:2, :]
     elif method == 'percent':
         x = (x - x[:, 0:1, :]) / x[:, 0:1, :]
+        # x = (x - x[:, 0:20, :].mean(axis=1)) / x[:, 0:20, :].mean(axis=1)
         x *= 100
     return x
 
 #
-#  Main plotting script
+#  MAIN PLOTTING SCRIPT
 #
 
+
+#  FIGURE 1
 if 1 in to_plot:
-    X = np.array([smokers[k] for k in keys])
+    X = np.array([np.asarray(smokers[k])[:55,start_time:] for k in keys])
     X = preprocess_array(X)
     X /= n_smokers
 
@@ -126,13 +130,13 @@ if 1 in to_plot:
     plt.show()
     fig.savefig(op.join('figures', 'n_smokers-%i.png' % ci), dpi=300)
 
-
-# import pdb;pdb.set_trace()
+####################
+#  FIGURE 2
 if 2 in to_plot:
 
     centrality = data['centrality']
-    centrality_smoker = np.array([centrality[k]['smoker'] for k in keys])
-    centrality_nosmoker = np.array([centrality[k]['non_smoker'] for k in keys])
+    centrality_smoker = np.array([np.asarray(centrality['smoker'][k])[:55,start_time:] for k in keys])
+    centrality_nosmoker = np.array([np.asarray(centrality['non_smoker'][k])[:55,start_time:] for k in keys])
     centrality_smoker = rescale(preprocess_array(centrality_smoker), axis=1)
     centrality_nosmoker = rescale(preprocess_array(centrality_nosmoker),
                                   axis=1)
@@ -152,14 +156,6 @@ if 2 in to_plot:
         sns.tsplot(X[::decim, :, i:i + 1],
                    color=color, condition=mapping[key], ax=ax1, ci=[95, ci],
                    legend=False)
-    # sns.tsplot(np.mean([centrality_smoker[::decim, :, ik] for
-    #                    ik, k in enumerate(keys)], axis=0),
-    #            color=color_smoker, condition='smoker', ax=ax1, ci=[95, ci])
-    # sns.tsplot(np.mean([centrality_nosmoker[::decim, :, ik] for
-    #                    ik, k in enumerate(keys)], axis=0),
-    #            color=color_nonsmoker, condition='non-smoker',
-    #            ax=ax1, ci=[95, ci])
-
     if set_titles:
         fig.suptitle('Evolution of eigenvector centrality', fontsize=32)
 
@@ -188,7 +184,10 @@ if 2 in to_plot:
     plt.show()
     fig.savefig(op.join('figures', 'centrality_smokers--%i.png' % ci), dpi=300)
 
-X = np.array([data['conditional_prob'][k] for k in keys])
+####################
+#  FIGURE 3
+
+X = np.array([np.asarray(data['conditional_prob'][k])[:55,start_time:,:] for k in keys])
 X = np.transpose(X, (-1, 1, 2, 0))
 X = moving_average(X, ma_window_size, axis=2)
 

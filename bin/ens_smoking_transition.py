@@ -39,17 +39,6 @@ sys.path.append('../')
 #  Import CopanBehaveModel class from pycopanbehave
 from pycopanbehave import CopanBehaveModel
 
-
-#
-#  Define Bunch class
-#
-
-class Bunch(dict):
-    """Bunch object"""
-    def __init__(self,**kw):
-        dict.__init__(self,kw)
-        self.__dict__.update(kw)
-
 ####################################################################################################################################
 #
 #  Functions
@@ -381,7 +370,7 @@ def generate_eq(L):
 		degree_preference = np.random.normal(L.mean_degree_pref, L.std_degree_pref, L.N).astype("int8")
 
 		# Get the underlying network structure
-		proximity_structure = generate_initial_distance_sm(L)
+		background_proximity = generate_initial_distance_sm(L)
 
 		###################
 		# Generate equilibrium contact networks
@@ -396,7 +385,7 @@ def generate_eq(L):
 		# Initialize fully coupled model
 		coupling_instance='full'
 
-		model_initial=CopanBehaveModel(proximity_structure,						   
+		model_initial=CopanBehaveModel(background_proximity,						   
 						   agent_characteristics,
 						   agent_properties,
 						   contact_network,
@@ -466,7 +455,6 @@ def transition(coupling_instance, model_initial, L, out,char_dist):
 			nw_snapshots_dic[i]=(model_trans.get_contact_network().adjacency)
 
 	if (coupling_instance=='full') and (L.write_full_output_to_file):
-
 		output = open(L.output_path+'/nw_snaps_eq_yb_%s_%s.pkl'%(L.yb_final,out), 'wb')
 		pickle.dump(nw_snapshots_dic, output)
 		output.close()
