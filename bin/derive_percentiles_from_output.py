@@ -101,10 +101,6 @@ for run in xrange(ensemble_size):
                     read_in[active_key][active_var])
 
     pkl_file.close()
-    # centr_connected.append(
-    #     (folder,
-    #      np.asarray(no_connected_list).mean(),
-    #      np.asarray(no_connected_list).std()))
 
 #############################
 # DERIVE ENSEMBLE PERCENTILES

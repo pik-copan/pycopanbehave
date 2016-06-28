@@ -137,8 +137,6 @@ def master():
     else:
         paramrange = np.linspace(yb_initial, L.yb_final
                                  discrete_stops_over_interval)
-        # for k in xrange(discrete_stops_over_interval):
-        #     for i in xrange(L.n_ensemble):
         L.yb_final = 3.0  # paramrange[k]
         mpi.submit_call("do_one", (out, L), id=out)
         out += 1
