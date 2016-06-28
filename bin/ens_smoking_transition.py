@@ -18,7 +18,6 @@ MAIN FUNCTIONS FOR SMOKING BEHAVIOUR TRANSITION SIMULATIONS
 #  Imports
 #
 
-import os
 import sys
 import pickle
 
@@ -27,13 +26,14 @@ import scipy.stats
 import scipy.integrate as integ
 
 import igraph
-import progressbar
 
 # Import pyunicorn dependencies
-from pyunicorn import mpi, Network
+from pyunicorn import Network
 
 #  Import CopanBehaveModel class from pycopanbehave
 from pycopanbehave import CopanBehaveModel
+
+range = getattr(__builtins__, 'xrange', __builtins__.range)
 
 # Add repository path of the model core
 sys.path.append('../')
@@ -135,13 +135,12 @@ def transient_disposition_distribution(N, disp_distr_t, yb):
     #  Define helper function
     def integrate_cdf(input_array):
         cdf = np.zeros(input_array.shape[0])
-        for i in xrange(input_array.shape[0]):
+        for i in range(input_array.shape[0]):
             cdf[i] = integ.quad(lambda x: distribution_function(yb, x),
                                 0, input_array[i])[0]
         return cdf
 
     kolm_smir_step = 2
-    improvement = True
 
     # Kolm Smir target
     target = 0.1
@@ -205,8 +204,6 @@ def generate_initial_distance_sm(L):
     that is successively rewired with the rewiring probability L.p_rew.
     According to Watts & Strogatz 0.01 < p_rew < 0.1.
     """
-    substr_adj_list = []
-    full_adjacency = np.zeros((L.N, L.N))
     proximity_small_world = np.zeros((L.N, L.N))
     proxim_nw = igraph.GraphBase.Lattice([L.N], nei=L.links_per_node,
                                          directed=False, mutual=True,
@@ -227,7 +224,7 @@ def generate_initial_distance_sm(L):
     proximity_small_world[np.where(proximity_small_world <= 0.2)] = 0.2
 
     # ensure that the diagonals are 0
-    for k in xrange(proximity_small_world.shape[0]):
+    for k in range(proximity_small_world.shape[0]):
         proximity_small_world[k, k] = 0
 
     return proximity_small_world
@@ -238,7 +235,7 @@ def calc_cond_prob(smokers, nw_full, deg_sep_max, N):
     Add docstring!
     """
     rcp = np.zeros(5)
-    for i in xrange(deg_sep_max):
+    for i in range(deg_sep_max):
         deg_sep = i + 1
         smoking_dep = []
         for node in smokers:
@@ -320,7 +317,6 @@ def derive_nw_chars(outdic, model_trans, L, i=0):
     if 'contact_change' in outdic:
         outdic['contact_change'][i] = model_trans._new_edges
     if 'no_of_smokers' in outdic:
-        # print 'smokers',len(smokers)
         outdic['no_of_smokers'][i] = len(smokers)
     if 'cogn_diss_coeff' in outdic:
         outdic['cogn_diss_coeff'][i] = np.mean(
@@ -355,7 +351,7 @@ def derive_nw_chars(outdic, model_trans, L, i=0):
         try:
             nwsm = Network(adjacency=ts_adj[smok, :][:, smok])
             get_cl = nwsm.graph.clusters(mode='WEAK')
-            sm_cl_len = [len(get_cl[rft]) for rft in xrange(len(get_cl))]
+            sm_cl_len = [len(get_cl[rft]) for rft in range(len(get_cl))]
             sm_cl_len = np.asarray(sm_cl_len)
             outdic['max_sm_cl_size'][i] = np.max(sm_cl_len)
             # print sm_cl_len[sm_cl_len>1]
@@ -418,7 +414,7 @@ def generate_eq(L):
     """
     Add docstring!
     """
-    print '############## INITIALIZE MODEL'
+    print('############## INITIALIZE MODEL')
     no_components = 2
     while no_components != 1:
 
@@ -458,7 +454,7 @@ def generate_eq(L):
 
         print('############## RUN EQ GENERATION')
         print('EQ generation', sum(model_initial.get_agent_characteristics()))
-        for i in xrange(L.n_initial_eq_it):
+        for i in range(L.n_initial_eq_it):
             model_initial.iterate(1)
             (model_initial.get_contact_network()
                           .set_node_attribute(
@@ -472,7 +468,7 @@ def generate_eq(L):
         no_components = len(clusters[0]) + len(clusters) - L.N
         print('################# Number of components initial network '
               '#################')
-        print no_components, len(clusters)
+        print(no_components, len(clusters))
     return model_initial
 
 
@@ -499,7 +495,7 @@ def transition(coupling_instance, model_initial, L, out, char_dist):
                     model_trans.get_agent_characteristics()))
     output_dict = {}
     nw_snapshots_dic = {}
-    for i in xrange(L.n_iterations):
+    for i in range(L.n_iterations):
 
         ###############################################################
         #    TRANSIENT CHANGE OF THE SMOKING DISPOSITION
@@ -559,9 +555,7 @@ def do_one(out, L):
     ###############################################################
     char_dist = np.empty(((L.n_iterations, L.N)))
     char_dist[0, :] = model_initial.get_agent_properties()
-    kolm_smir_trans = 1
-    improvement_random_process = True
-    for i in xrange(1, L.n_transition):
+    for i in range(1, L.n_transition):
         yb = (L.yb_initial - (L.yb_initial - L.yb_final) * (float(i + 1) /
               L.n_transition))
         char_dist[i, :] = transient_disposition_distribution(
@@ -577,15 +571,15 @@ def do_one(out, L):
         out_dic_2x2['full'] = transition(
             'full', model_initial, L, out, char_dist)
     if L.coupling_instances['infl']:
-        print '############## RUN SOCIAL INFLUENCE ONLY'
+        print('############## RUN SOCIAL INFLUENCE ONLY')
         out_dic_2x2['infl'] = transition(
             'infl', model_initial, L, out, char_dist)
     if L.coupling_instances['dyn']:
-        print '############## RUN DYNAMIC ONLY'
+        print('############## RUN DYNAMIC ONLY')
         out_dic_2x2['dyn'] = transition(
             'dyn', model_initial, L, out, char_dist)
     if L.coupling_instances['mean_field']:
-        print '############## RUN MEAN FIELD FORCING'
+        print('############## RUN MEAN FIELD FORCING')
         out_dic_2x2['mean_field'] = transition(
             'mean_field', model_initial, L, out, char_dist)
     fname = L.output_path + '/trans_smok_%s.pkl' % out

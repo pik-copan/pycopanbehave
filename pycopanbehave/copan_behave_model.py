@@ -131,7 +131,7 @@ class CopanBehaveModel(object):
         """
         distances = np.zeros((self._N, self._N))
 
-        for i in xrange(self._N):
+        for i in range(self._N):
             # Calculate the distances based on the first two chars that apply
             # to all nodes uniformly
             distances[i, :] = (char_weight[0] * np.abs(
@@ -158,7 +158,7 @@ class CopanBehaveModel(object):
             self._interaction_probability_function
 
         # Iterate
-        for i in xrange(n_steps):
+        for i in range(n_steps):
             #  Calculate distance metric from contact network
             distance_metric = self.get_distance_metric_matrix(contact_network)
 
@@ -274,7 +274,7 @@ class CopanBehaveModel(object):
         #  Compute share of smokers in the system
         sm_share = float(agent_characteristics.sum()) / self._N
 
-        for i in xrange(len(agent_characteristics)):
+        for i in range(len(agent_characteristics)):
             #  Get number of interactions of node i
             nai = np.sum(interaction_network[i, :])
 
@@ -327,9 +327,6 @@ class CopanBehaveModel(object):
         #  Get old contact adjacency matrix
         old_contact_adjacency = contact_network.adjacency
 
-        #  Get old degree k
-        k = contact_network.degree()
-
         #  Initialize new contact network adjacency matrix
         contact_adjacency = np.zeros(old_contact_adjacency.shape, dtype="int8")
 
@@ -337,7 +334,7 @@ class CopanBehaveModel(object):
         potential_contact_indices = []
 
         # Loop over all agents
-        for i in xrange(self._N):
+        for i in range(self._N):
             # Get node indices of contacts
             contact_indices = np.where(old_contact_adjacency[i, :] == 1)[0]
 
@@ -366,9 +363,7 @@ class CopanBehaveModel(object):
             # else:   potential_contact_indices.append([])
 
         #  Keep only bidirectional potential new contacts
-        for i in xrange(self._N):
-            # if k[i] != 0:
-            #  Initialize
+        for i in range(self._N):
             filtered_indices = []
 
             for j in potential_contact_indices[i]:

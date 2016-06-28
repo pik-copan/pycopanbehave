@@ -20,9 +20,11 @@ RUN FILE SMOKER TRANSITION
 # Add repository path of the model core
 import sys
 import os
-import glob
 
-from ens_smoking_transition import *
+from ens_smoking_transition import Bunch
+from pyunicorn import mpi
+
+range = getattr(__builtins__, 'xrange', __builtins__.range)
 
 sys.path.append('../bin')
 
@@ -131,12 +133,10 @@ def master():
     out = 0
 
     if L.transition_flag:
-        for i in xrange(L.n_ensemble):
+        for i in range(L.n_ensemble):
             mpi.submit_call("do_one", (i, L), id=i)
             out += 1
     else:
-        paramrange = np.linspace(yb_initial, L.yb_final
-                                 discrete_stops_over_interval)
         L.yb_final = 3.0  # paramrange[k]
         mpi.submit_call("do_one", (out, L), id=out)
         out += 1

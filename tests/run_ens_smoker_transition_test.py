@@ -80,7 +80,7 @@ smoking_weight = .1 * smoking_mobility
 L.char_weight = (0, smoking_weight, (1 - smoking_weight))
 
 # Smoking behaviour switching probability scaling factor  scales the switching probability pi(t) of the smoking
-# behaviour. 
+# behaviour.
 # C controls the amplitude of equilibrium stochastic noise of the smoking behaviour that is introduced by the Ising-like implementation.
 L.C=0.1
 
@@ -127,7 +127,7 @@ L.nw_save_steps = int(L.n_iterations / nw_snapshots)
 def master():
     out = 0
 
-    for i in xrange(L.n_ensemble):
+    for i in range(L.n_ensemble):
         mpi.submit_call("do_one", (i,L), id=i)
         out += 1
 

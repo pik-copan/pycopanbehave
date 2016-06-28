@@ -18,14 +18,12 @@ SUPPORT FUNCTIONS
 #  Imports
 #
 
-import sys
 import glob
-import os
 import pickle
 
-import numpy.ma as ma
 import numpy as np
-import scipy.stats
+
+range = getattr(__builtins__, 'xrange', __builtins__.range)
 
 #
 #  Initializations
@@ -55,7 +53,7 @@ for run in run_reps:
 
             elif np.asarray(read_in[active_key][active_var]).dtype == 'object':
                 for sm_key in read_in[active_key][active_var].keys():
-                    if if sm_key not insummary_dic[active_var]:
+                    if sm_key not in summary_dic[active_var]:
                         summary_dic[active_var][sm_key] = {}
 
                     if active_key not in summary_dic[active_var][sm_key]:
