@@ -147,17 +147,17 @@ class CopanBehaveModel(object):
         """
         Iterate the model for n_steps further time steps.
         """
-        #  Get current contact network
+        # Get current contact network
         contact_network = self.get_contact_network()
 
-        #  Get degree preference
+        # Get degree preference
         degree_preference = self.get_degree_preference()
 
-        #  Get interaction_probability function
+        # Get interaction_probability function
         interaction_probability_function = \
             self._interaction_probability_function
 
-        #  Iterate
+        # Iterate
         for i in xrange(n_steps):
             #  Calculate distance metric from contact network
             distance_metric = self.get_distance_metric_matrix(contact_network)
@@ -274,10 +274,6 @@ class CopanBehaveModel(object):
         #  Compute share of smokers in the system
         sm_share = float(agent_characteristics.sum()) / self._N
 
-        # print('agent_characteristics_update ini',
-        # sum(agent_characteristics_update))
-
-        # ave_prob_flip = []
         for i in xrange(len(agent_characteristics)):
             #  Get number of interactions of node i
             nai = np.sum(interaction_network[i, :])
@@ -305,7 +301,6 @@ class CopanBehaveModel(object):
                                       agent_characteristics) / nai))
                         agent_characteristics_update[i] = \
                             1 - (random_number <= prob_flip).astype("int8")
-                        # ave_prob_flip.append(prob_flip)
 
                 #  Mean field social influence for the dyn only case
                 elif self._coupling_instance in ['mean_field']:
@@ -321,12 +316,7 @@ class CopanBehaveModel(object):
                                      (1 - sm_share))
                         agent_characteristics_update[i] = \
                             1 - (random_number <= prob_flip).astype("int8")
-                        # ave_prob_flip.append(prob_flip)
 
-        # print('agent_characteristics_update after',
-        # sum(agent_characteristics_update))
-        # print(self._coupling_instance, 'ave_prob_flip ',
-        # np.mean(np.asarray(ave_prob_flip)),' share of smokers ', sm_share)
         return agent_characteristics_update
 
     def update_contact_network(self, contact_network, proximity_matrix,
@@ -343,30 +333,29 @@ class CopanBehaveModel(object):
         #  Initialize new contact network adjacency matrix
         contact_adjacency = np.zeros(old_contact_adjacency.shape, dtype="int8")
 
-        #  Initialize list of sorted indices
+        # Initialize list of sorted indices
         potential_contact_indices = []
 
-        #  Loop over all agents
+        # Loop over all agents
         for i in xrange(self._N):
-            #  Get node indices of contacts
+            # Get node indices of contacts
             contact_indices = np.where(old_contact_adjacency[i, :] == 1)[0]
 
-            #  Agent i has contacts
-            # if k[i] != 0:
-            #  Get node indices of interaction network
+            # Agent i has contacts
+            # if k[i] != 0:  Get node indices of interaction network
             interaction_probability_indices = np.where(
                 interaction_network[i, :] == 1)[0]
 
-            #  Combine both lists of indices and discard repeated entries
+            # Combine both lists of indices and discard repeated entries
             indices = list(np.unique(np.append(contact_indices,
                                      interaction_probability_indices)))
 
-            #  Get proximity values of contacts and interaction_network
+            # Get proximity values of contacts and interaction_network
             similarities = proximity_matrix[i, indices]
 
             indices = np.array(indices)
 
-            #  Get degree_preference[i] indices with largest similarities
+            # Get degree_preference[i] indices with largest similarities
             sorted_indices = indices[
                 similarities.argsort()][-degree_preference[i]:]
 
@@ -394,11 +383,6 @@ class CopanBehaveModel(object):
             (np.sum(np.abs(old_contact_adjacency - contact_adjacency)) -
              np.sum(np.diag(np.abs(old_contact_adjacency -
                                    contact_adjacency)))) / 2)
-        # print('new edges:'
-        # np.sum((old_contact_adjacency-contact_adjacency)))
-
-        # print("Symmetry:",
-        # ((contact_adjacency - contact_adjacency.transpose())**2).sum())
 
         #  Update contact Network object
         contact_network.adjacency = contact_adjacency

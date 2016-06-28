@@ -43,14 +43,11 @@ for run in run_reps:
         read_in = pickle.load(fid)
     print(run)
     for active_key in read_in.keys():
-        # for active_var in read_out_list:
         for active_var in read_in[active_key].keys():
-            # print(active_var, active_ke)
             if active_var not in summary_dic:
                 summary_dic[active_var] = {}
 
             elif active_var == 'smokers':
-                # print('smokers unpacked')
                 if active_key not in summary_dic[active_var]:
                     summary_dic[active_var][active_key] = []
                 summary_dic[active_var][active_key].append(
@@ -72,9 +69,6 @@ for run in run_reps:
 
                 summary_dic[active_var][active_key].append(
                     read_in[active_key][active_var])
-
-    # centr_connected.append((folder,np.asarray(no_connected_list).mean(),
-    # np.asarray(no_connected_list).std()))
 
 #############################
 # SAVE OUTPUT

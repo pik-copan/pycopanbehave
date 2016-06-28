@@ -424,7 +424,7 @@ def generate_eq(L):
 
         agent_properties, agent_characteristics = rejection_sampling(
             L.N, distribution_function, L.yb_initial)
-        #  Degree preference distribution
+        # Degree preference distribution
         degree_preference = np.random.normal(
             L.mean_degree_pref, L.std_degree_pref, L.N).astype("int8")
 
@@ -469,7 +469,6 @@ def generate_eq(L):
         clusters = (model_initial.get_contact_network()
                                  .graph
                                  .clusters(mode='WEAK'))
-        # len(model_hysteresis.get_contact_network().graph.clusters())
         no_components = len(clusters[0]) + len(clusters) - L.N
         print('################# Number of components initial network '
               '#################')
