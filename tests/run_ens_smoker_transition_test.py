@@ -33,7 +33,7 @@ output_path = './ens_members/'
 
 #check if output path exists
 if os.path.exists(output_path) == False:
-	os.mkdir(output_path)
+    os.mkdir(output_path)
 
 #######################################
 # Namelist as a Bunch dictionary
@@ -48,7 +48,7 @@ L.n_ensemble = 100
 
 # Flag, which instances should be run (full,infl,dyn,meanfield)
 L.coupling_instances = {'full':True, 'infl':True, 'dyn':True,
-						'mean_field':True}
+                        'mean_field':True}
 
 
 # Sets the initial value for the disposition function (3.0 is set to be 50-50)
@@ -125,11 +125,11 @@ L.nw_save_steps = int(L.n_iterations / nw_snapshots)
 
 
 def master():
-	out = 0
+    out = 0
 
-	for i in xrange(L.n_ensemble):
-		mpi.submit_call("do_one", (i,L), id=i)
-		out += 1
+    for i in xrange(L.n_ensemble):
+        mpi.submit_call("do_one", (i,L), id=i)
+        out += 1
 
 
 mpi.run()
