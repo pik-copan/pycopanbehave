@@ -136,12 +136,9 @@ class CopanBehaveModel(object):
             # to all nodes uniformly
             distances[i, :] = (char_weight[0] * np.abs(
                                    np.abs(agent_characteristics -
-                                          agent_characteristics[i]) - 1) +
-                               char_weight[1] * np.abs(
-                                    np.abs(agent_characteristics -
-                                           agent_characteristics[i]) - 1))
+                                          agent_characteristics[i]) - 1)) 
 
-        return distances + char_weight[2] * background_proximity_matrix
+        return distances + char_weight[1] * background_proximity_matrix
 
     def iterate(self, n_steps):
         """

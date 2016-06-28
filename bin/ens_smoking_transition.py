@@ -333,9 +333,7 @@ def derive_nw_chars(outdic, model_trans, L, i=0):
     if 'clustering' in outdic:
         outdic['clustering'][i] = (model_trans.get_contact_network()
                                               .global_clustering())
-    if 'kolm_smir' in outdic:
-        outdic['kolm_smir'][i] = kolm_smir_trans
-
+        
     if 'apl' in outdic:
         outdic['apl'][i] = (model_trans.get_contact_network()
                                        .average_path_length())

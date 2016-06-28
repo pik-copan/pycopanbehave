@@ -82,7 +82,7 @@ L.interaction_offset = 0.03
 # positions
 smoking_mobility = 2
 smoking_weight = .1 * smoking_mobility
-L.char_weight = (0, smoking_weight, (1 - smoking_weight))
+L.char_weight = (smoking_weight, (1 - smoking_weight))
 
 # Smoking behaviour switching probability scaling factor  scales the switching
 # probability pi(t) of the smoking
