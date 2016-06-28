@@ -85,7 +85,7 @@ class CopanBehaveModel(object):
         else:
             #  If no degree preference passed to __init__, use degree vector
             #  of initial contact network
-            self._degree_preference = initial_contact.degree()
+            self._degree_preference = initial_contact_network.degree()
 
         #  Set interaction_probability function
         self._interaction_probability_function = \
