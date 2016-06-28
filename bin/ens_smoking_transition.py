@@ -239,7 +239,6 @@ def calc_cond_prob(smokers, nw_full, deg_sep_max, N):
         deg_sep = i + 1
         smoking_dep = []
         for node in smokers:
-            # print('node', node)
             distance_matrix = nw_full.path_lengths()
             contact_one = np.where(distance_matrix[node, :] == deg_sep)
             if contact_one[0].size > 0:
@@ -352,7 +351,6 @@ def derive_nw_chars(outdic, model_trans, L, i=0):
             sm_cl_len = [len(get_cl[rft]) for rft in range(len(get_cl))]
             sm_cl_len = np.asarray(sm_cl_len)
             outdic['max_sm_cl_size'][i] = np.max(sm_cl_len)
-            # print sm_cl_len[sm_cl_len>1]
             outdic['ave_sm_cl_size'][i] = np.mean(sm_cl_len[sm_cl_len > 1])
         except:
             print('derive smoker_cluster_size failed')
@@ -360,7 +358,7 @@ def derive_nw_chars(outdic, model_trans, L, i=0):
         outdic['conditional_prob'][i, :] = calc_cond_prob(
             smokers, model_trans.get_contact_network(), L.cond_prob_degree,
             L.N)
-    # print 'apl', outdic['apl'][i]
+
     if 'centrality' in outdic:
         outdic['centrality']['smoker'][i] = np.mean(
             np.asarray(model_trans.get_contact_network()
