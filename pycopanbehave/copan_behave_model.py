@@ -94,8 +94,6 @@ class CopanBehaveModel(object):
         #  Set number of agents N
         self._N = self._contact_network.N
 
-        self._background_proximity_matrix = background_proximity_matrix
-
     #
     #  Service methods
     #
