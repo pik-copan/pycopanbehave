@@ -27,6 +27,9 @@ import scipy.integrate as integ
 
 import igraph
 
+# Add repository path of the model core
+sys.path.append('../')
+
 # Import pyunicorn dependencies
 from pyunicorn import Network
 
@@ -35,8 +38,6 @@ from pycopanbehave import CopanBehaveModel
 
 range = getattr(__builtins__, 'xrange', __builtins__.range)
 
-# Add repository path of the model core
-sys.path.append('../')
 
 ###############################################################################
 #
