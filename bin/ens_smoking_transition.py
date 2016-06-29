@@ -36,7 +36,19 @@ from pyunicorn import Network
 #  Import CopanBehaveModel class from pycopanbehave
 from pycopanbehave import CopanBehaveModel
 
-range = getattr(__builtins__, 'xrange', __builtins__.range)
+
+#
+#  Define Bunch class
+#
+
+class Bunch(dict):
+    """Bunch object"""
+    def __init__(self,**kw):
+        dict.__init__(self,kw)
+        self.__dict__.update(kw)
+
+
+#range = getattr(__builtins__, 'xrange', __builtins__.range)
 
 
 ###############################################################################

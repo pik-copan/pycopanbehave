@@ -20,14 +20,12 @@ RUN FILE SMOKER TRANSITION
 # Add repository path of the model core
 import sys
 import os
+sys.path.append('../bin')
 
-from ens_smoking_transition import Bunch
+from ens_smoking_transition import Bunch, do_one
 from pyunicorn import mpi
 
 range = getattr(__builtins__, 'xrange', __builtins__.range)
-
-sys.path.append('../bin')
-
 
 #
 #  Initializations
@@ -46,22 +44,24 @@ L = Bunch()
 L.output_path = output_path
 
 #  Ensemble size (number of realizations of model time evolution)
-L.n_ensemble = 1000
+L.n_ensemble = 100
 
-# Flag, if a transition from the initial to the final distribution should take
-# place. If false, the final distribution will be applied directly
-L.transition_flag = True
+# Flag, if a transition from the initial to the final distribution should
+# take place. If false, the final distribution will be applied directly
 
 # Flag, which instances should be run (full,infl,dyn,meanfield)
 L.coupling_instances = {'full': True, 'infl': True, 'dyn': True,
                         'mean_field': True}
 
+
+# Sets the initial value for the disposition function (3.0 is set to be 50-50)
+L.yb_initial = 3.0
 # Sets the final value for the disposition function (yb_final==0.0 is full
 # transition)
 L.yb_final = 0.5
 
 #  Number of nodes
-L.N = 100
+L.N = 1000
 
 #  Mean degree preference
 L.mean_degree_pref = 10  # as it is stated in cf08
@@ -85,8 +85,7 @@ smoking_weight = .1 * smoking_mobility
 L.char_weight = (smoking_weight, (1 - smoking_weight))
 
 # Smoking behaviour switching probability scaling factor  scales the switching
-# probability pi(t) of the smoking
-# behaviour.
+# probability pi(t) of the smoking behaviour.
 # C controls the amplitude of equilibrium stochastic noise of the smoking
 # behaviour that is introduced by the Ising-like implementation.
 L.C = 0.1
@@ -98,32 +97,35 @@ L.n_trans_eq_post = 0
 L.n_iterations = L.n_transition + L.n_trans_eq_post
 
 #
-#  Parameters only relevant for the transition_flag==True case
+# Variables that sets whether or not full output should be stored for each
+# ensemble member (default: false)
+#
+L.write_full_output_to_file = False
+L.write_char_disposition = False
+
+#
+# Relevant variables to be stored in any case,
+# with write_full_output_to_file==False
 #
 
-# Flag, if betweeneess and closeness should be recorded calculated transient
-# online (slow)
-L.calc_full_centr_measures = True
+L.variables_out = [
+    'clustering',
+    'conditional_prob',
+    'degree',
+    'no_of_smokers',
+    'apl',
+    'centrality'
+ ]
 
 # Sets the level of degree up to which conditional probability should be
-# derived (max 5)
-# warning, the larger, the slower
+# derived (max 5) warning, the larger, the slower
 L.cond_prob_degree = 5
 
 # number of snapshots of the full nw
-nw_snapshots = 10
+nw_snapshots = 1
 L.nw_save_steps = int(L.n_iterations / nw_snapshots)
 
-#
-#  Parameters only relevant for the transition_flag==False case
-#
-
-discrete_stops_over_interval = 20
-
-yb_initial = 3.0
-
 ###############################################################################
-#
 #  MPI script
 #
 ###############################################################################
@@ -131,14 +133,8 @@ yb_initial = 3.0
 
 def master():
     out = 0
-
-    if L.transition_flag:
-        for i in range(L.n_ensemble):
-            mpi.submit_call("do_one", (i, L), id=i)
-            out += 1
-    else:
-        L.yb_final = 3.0  # paramrange[k]
-        mpi.submit_call("do_one", (out, L), id=out)
+    for i in range(L.n_ensemble):
+        mpi.submit_call("do_one", (i, L), id=i)
         out += 1
 
 mpi.run()
