@@ -110,21 +110,21 @@ def interaction_probability_function(distance_metric_matrix, L):
     Since the number of nodes with a certain path length is gaussian
     distributed with a peak around the mean average path length, this has to
     be accounted for. Thereby, we norm the interaction probability according
-    to the absolute number of occurences of each entry.
+    to the absolute number of occurrences of each entry.
     """
     # Three degrees of influence plus an interaction offset to avoid
     # disconnection
     exp_dec = (L.p_ai-L.interaction_offset) * \
-        np.exp(-(distance_metric_matrix-1) / 2.) + L.interaction_offset
+        np.exp(-(distance_metric_matrix-1) / 2.) 
     distmax = distance_metric_matrix[np.isfinite(distance_metric_matrix)].max()
     histo_range = np.arange(1, distmax)
     distribution = np.histogram(distance_metric_matrix.flatten(), histo_range)
-
+    
     for i in distribution[1][:-1]:
         exp_dec[distance_metric_matrix == i] *= (float(distribution[0][0]) /
                                                  distribution[0][i-1])
 
-    # exp_dec=np.exp(-(distance_metric_matrix-1)/2.)
+    exp_dec +=L.interaction_offset
     return exp_dec
 
 
