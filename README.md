@@ -17,9 +17,9 @@ Main:
 - numpy > 1.11.1 (http://www.numpy.org/)
 - scipy > 0.17.1 (http://www.scipy.org)
 - igraph > 0.7.0 (http://igraph.org/python/)
-- pyunicorn > 0.5.1 (Unified Complex Network and RecurreNce analysis toolbox)
-  http://www.pik-potsdam.de/~donges/pyunicorn/
-  get it here: https://github.com/pik-copan/pyunicorn
+- pyunicorn > 0.5.1 (Unified Complex Network and RecurreNce analysis toolbox),
+  http://www.pik-potsdam.de/~donges/pyunicorn/,
+  get it here: https://github.com/pik-copan/pyunicorn,
   or via pip: pip install pyunicorn
 
 For plotting:
@@ -31,7 +31,7 @@ For plotting:
 
 The modelling approach consists of two parts:
 
-- The dynamic social network model (pycopanbehave/)
+- The dynamic social network model (pycopanbehave/, class CopanBehaveModel)
     *  Contains the main functionalities of the underlying adaptive network model
     *  provides interfaces to specific applications, e.g. for the smoker evolution case
 
