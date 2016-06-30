@@ -109,7 +109,7 @@ def rescale(x, axis, method='percent'):
 
 #  FIGURE 1
 if 1 in to_plot:
-    X=[np.asarray(smokers[k])[:, start_time:] for k in keys]
+    X=[np.asarray(smokers[k])[:1000, start_time:] for k in keys]
     X = preprocess_array(X)
     X /= n_smokers
 
@@ -138,9 +138,9 @@ if 2 in to_plot:
 
     centrality = data['centrality']
     centrality_smoker = np.array([
-        np.asarray(centrality['smoker'][k])[:, start_time:] for k in keys])
+        np.asarray(centrality['smoker'][k])[:1000, start_time:] for k in keys])
     centrality_nosmoker = np.array([
-        np.asarray(centrality['non_smoker'][k])[:, start_time:]
+        np.asarray(centrality['non_smoker'][k])[:1000, start_time:]
         for k in keys])
     centrality_smoker = rescale(preprocess_array(centrality_smoker), axis=1)
     centrality_nosmoker = rescale(preprocess_array(centrality_nosmoker),
@@ -166,7 +166,7 @@ if 2 in to_plot:
 
     plt.xticks(n_xticks)
     # if set_titles:
-    ax1.set_title('smoker')
+    ax1.set_title('smokers')
     ax1.set_xlabel('Time [AU]')
     ax1.set_ylabel('Relative change in centrality [percent]')
     ax1.set_xlim(0, max(n_xticks))
@@ -192,7 +192,7 @@ if 2 in to_plot:
 ####################
 #  FIGURE 3
 
-X = np.array([np.asarray(data['conditional_prob'][k])[:, start_time:, :]
+X = np.array([np.asarray(data['conditional_prob'][k])[:1000, start_time:, :]
               for k in keys])
 X = np.transpose(X, (-1, 1, 2, 0))
 X = moving_average(X, ma_window_size, axis=2)
