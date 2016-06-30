@@ -11,23 +11,34 @@ Preprint: arxiv.org:1512.05013 [physics.soc-ph] (2015), in review.
 Please see the above paper for a detailed mathematical description of the model (Methods section) and references to the relevant scientific literature.
 
 ## Dependencies
-pyunicorn (Unified Complex Network and RecurreNce analysis toolbox)
-http://www.pik-potsdam.de/~donges/pyunicorn/
-get it here: https://github.com/pik-copan/pyunicorn
-or via pip: pip install pyunicorn
+
+Main:
+
+- numpy > 1.11.1 (http://www.numpy.org/)
+- scipy > 0.17.1 (http://www.scipy.org)
+- igraph > 0.7.0 (http://igraph.org/python/)
+- pyunicorn > 0.5.1 (Unified Complex Network and RecurreNce analysis toolbox)
+  http://www.pik-potsdam.de/~donges/pyunicorn/
+  get it here: https://github.com/pik-copan/pyunicorn
+  or via pip: pip install pyunicorn
+
+For plotting:
+
+- matplotlib > 1.5.1 (http://www.matplotlib.org/)
+- seaborn > 0.7.1 (https://web.stanford.edu/~mwaskom/software/seaborn/)
 
 ## Code structure
 
 The modelling approach consists of two parts:
 
-- The dynamic social network model (pysoc)
-    *  Contains the main functionalities of the underlying adaptive network
-    *  provides interface to specific applications e.g. for the smoker evolution case
+- The dynamic social network model (pycopanbehave/)
+    *  Contains the main functionalities of the underlying adaptive network model
+    *  provides interfaces to specific applications, e.g. for the smoker evolution case
 
-- The smoker transition simulations (bin)
+- The smoker transition simulations (bin/)
     *  Specifically adapted to test case
-    * Add simulation specific functionalities e.g. the smoking disposition and the respective transition
-    ** Optimised to be run in parallel setup
+    *  Add simulation specific functionalities, e.g. the smoking disposition and the respective transition
+    * Optimised to be run in parallel setup
 
 ## Run the Model
 Being rather computationally intensive, the modelling setup is optimised to run in a parallel MPI setup and individual ensemble members will be saved as separate outputs (requires post-processing, see below)
@@ -39,3 +50,6 @@ Being rather computationally intensive, the modelling setup is optimised to run 
 ## Postprocessing and analysis
 - The parallelisation procedure saves individual ensemble member representations
 - bin/derive_percentiles_from_output.py derives percentiles from the respective output that can be used for further analysis
+
+## Plotting results
+- manuscript_plot_scripts/plot_manuscript_figures.py allows to reproduce the manuscript figures from model runs
