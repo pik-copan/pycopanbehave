@@ -345,7 +345,7 @@ def derive_nw_chars(outdic, model_trans, L, i=0):
     if 'clustering' in outdic:
         outdic['clustering'][i] = (model_trans.get_contact_network()
                                               .global_clustering())
-        
+
     if 'apl' in outdic:
         outdic['apl'][i] = (model_trans.get_contact_network()
                                        .average_path_length())
@@ -455,7 +455,7 @@ def generate_eq(L):
             contact_network, interaction_probability_function, L,
             coupling_instance, degree_preference)
 
-        model_initial.get_eq_network()
+        model_initial.set_eq_network()
         (model_initial.get_contact_network()
                       .set_node_attribute(
                           'smoker',

@@ -37,6 +37,33 @@ class CopanBehaveModel(object):
         predicts clustered marginalization of minorities,
         Preprint: arxiv.org:1512.05013 [physics.soc-ph] (2015).
         (#) The first three authors share the lead authorship.
+
+    Parameters
+    ----------
+    background_proximity_matrix : np.array[N,N] of dtype float
+        The background proximity matrix describing social background structure
+    agent_characteristics : np.array[N] of dtype float
+        Vector of initial individual endogeneous agent characteristics (e.g.
+        smoking behaviour)
+    agent_properties : np.array[N] of dtype float
+        Vector of initial exogeneous individual agent properties (e.g. smoking
+        disposition)
+    initial_contact_network : pyunicorn.Network object
+        Initial contact network
+    interaction_probability_function : function
+        Function for computing interaction probability matrix from social
+        distance matrix
+    L : bunch dictionary
+        Dictionary containing model parameters
+    coupling_instance : string
+        Flag determines which model type (full or partial) is used,
+        possible values:
+        'full' : fully coupled model
+        'infl' : local social influence, static contact network
+        'mean_field' : mean-field social influence, dynamic contact network
+        'dyn' : no social influence, dynamic contact network
+    degree_preference : np.array[N] of dtype int
+        Vector of individual degree preferences
     """
 
     #
@@ -44,42 +71,50 @@ class CopanBehaveModel(object):
     #
 
     def __init__(self, background_proximity_matrix, agent_characteristics,
-                 agent_properties,
-                 initial_contact_network, interaction_probability_function, L,
-                 coupling_instance='full', degree_preference=None):
+                 agent_properties, initial_contact_network,
+                 interaction_probability_function, L, coupling_instance='full',
+                 degree_preference=None):
         """
         Constructor of CopanBehaveModel class.
 
-        Add explanation of class constructor arguments here!
+        See class docstring for parameter description.
         """
         #
         #  Initialize instance variables
         #
 
-        # Reference proximity to which the model is relaxed to
+        #  Background proximity matrix
         self._background_proximity_matrix = background_proximity_matrix.copy()
 
-        # Distribution of the endogenous individual characteristics
+        #  Vector of initial endogenous individual characteristics
         self._agent_characteristics = agent_characteristics.copy()
 
-        # Distribution of the exogenous individual properties
+        #  Vector of initial exogenous individual properties
         self._agent_properties = agent_properties.copy()
 
-        # Flags if the character feedback is active or not
+        #  Flag determines which model type (full or partial) is used
         self._coupling_instance = coupling_instance
 
+        #  Initial contact network
         adjacency = initial_contact_network.adjacency
         self._contact_network = Network(adjacency=adjacency, directed=False,
                                         silence_level=3)
 
+        #  Number of interactions (edges in interaction network)
+        #  in a model time step
         self._no_interactions = 0.
 
+        #  Number of new edges in contact network appearing
+        #  in a model time step
         self._new_edges = 0
 
+        #  Bunch dictionary containing model parameters
         self._L = L
 
+        #  Weight parameters for computation of proximity matrix
         self._char_weight = L.char_weight
 
+        #  Vector of individual degree preferences
         if degree_preference is not None:
             self._degree_preference = degree_preference.copy()
         else:
@@ -128,21 +163,41 @@ class CopanBehaveModel(object):
         """
         Returns a proximity matrix based on distance between individual
         characteristics and a background proximity structure.
+
+        Parameters
+        ----------
+        agent_characteristics : np.array[N] of dtype float
+            Vector of initial individual endogeneous agent characteristics
+            (e.g. smoking behaviour)
+        char_weight : np.array[2]
+            Weight parameters for computation of proximity matrix
+        background_proximity_matrix : np.array[N,N] of dtype float
+            The background proximity matrix describing social background structure
+
+        Returns
+        -------
+        Proximity matrix : np.array[N,N] of dtype float
         """
         distances = np.zeros((self._N, self._N))
 
         for i in range(self._N):
-            # Calculate the distances based on the first two chars that apply
-            # to all nodes uniformly
+            #  Calculate the distances based on the first characteristic
             distances[i, :] = (char_weight[0] * np.abs(
                                    np.abs(agent_characteristics -
-                                          agent_characteristics[i]) - 1)) 
+                                          agent_characteristics[i]) - 1))
 
+        #  Compute proximity matrix as weighted sum of distance in
+        #  characteristics and background proximity structure
         return distances + char_weight[1] * background_proximity_matrix
 
     def iterate(self, n_steps):
         """
         Iterate the model for n_steps further time steps.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of model time steps to be integrated
         """
         # Get current contact network
         contact_network = self.get_contact_network()
@@ -196,9 +251,9 @@ class CopanBehaveModel(object):
         self._contact_network = contact_network
         self._no_interactions = np.sum(interaction_network)
 
-    def get_eq_network(self):
+    def set_eq_network(self):
         """
-        Get the optimal target network for a given proximity matrix by
+        Set the equilibrium contact network for present proximity matrix by
         letting everyone interact with everyone else.
         """
         #  Get current contact network
@@ -225,7 +280,6 @@ class CopanBehaveModel(object):
             degree_preference)
 
         #  Update instance variables to iterated values
-        self._agent_characteristics = agent_characteristics
         self._contact_network = contact_network
         self._no_interactions = np.sum(interaction_probability_matrix)
 
@@ -233,6 +287,15 @@ class CopanBehaveModel(object):
         """
         Returns the geodesic graph distance (shortest path length) matrix
         as a measure of social distance on the contact network.
+
+        Parameters
+        ----------
+        contact_network : pyunicorn.Network object
+            Contact network
+
+        Returns
+        -------
+        Distance metric on contact network : np.array[N,N] of dtype float
         """
         #  Return shortest path lengths matrix
         return contact_network.path_lengths()
@@ -242,14 +305,36 @@ class CopanBehaveModel(object):
         """
         Returns the interaction probability matrix given a distance metric on
         the contact network using the given interaction_probability function.
+
+        Parameters
+        ----------
+        distance_metric_matrix : np.array[N,N] of dtype float
+            Distance metric on contact network
+        interaction_probability_function : function
+            Function for computing interaction probability matrix from
+            social distance matrix
+
+        Returns
+        -------
+        Interaction probability matrix : np.array[N,N] of dtype float
+                                            in interval [0,1]
         """
         return interaction_probability_function(distance_metric_matrix,
                                                 self._L)
 
     def get_interaction_network(self, interaction_probability_matrix):
         """
-        Returns the interaction network's adjacency matrix given
+        Returns the interaction network's adjacency matrix stochstically given
         the interaction probability matrix.
+
+        Parameters
+        ----------
+        interaction_probability_matrix : np.array[N,N] of dtype float
+            Interaction probability matrix (in interval [0,1])
+
+        Returns
+        -------
+        Interaction network's adjacency matrix : np.array[N,N] of dtype int
         """
         #  Draw uniformly distributed random numbers from the interval [0,1]
         random_numbers = np.random.rand(self._N, self._N)
@@ -263,7 +348,22 @@ class CopanBehaveModel(object):
     def update_social_influence(self, agent_characteristics, agent_properties,
                                 interaction_network):
         """
-        Updated the agent characteristics following an Ising-type update scheme
+        Return updated agent characteristics following an Ising-type scheme.
+
+        Parameters
+        ----------
+        agent_characteristics : np.array[N] of dtype float
+            Vector of initial individual endogeneous agent characteristics
+            (e.g.smoking behaviour)
+        agent_properties : np.array[N] of dtype float
+            Vector of initial exogeneous individual agent properties
+            (e.g. smoking disposition)
+        interaction_network : np.array[N,N] of dtype int
+            Interaction network's adjacency matrix
+
+        Returns
+        -------
+        Updated individual agent characteristics : np.array[N] of float
         """
         #  Initialize
         agent_characteristics_update = agent_characteristics
@@ -320,6 +420,21 @@ class CopanBehaveModel(object):
                                interaction_network, degree_preference):
         """
         Returns the updated contact network.
+
+        Parameters
+        ----------
+        contact_network : pyunicorn.Network object
+            Contact network
+        proximity_matrix : np.array[N,N] of dtype float
+            Proximity matrix
+        interaction_network : np.array[N,N] of dtype int
+            Interaction network's adjacency matrix
+        degree_preference : np.array[N] of dtype int
+            Vector of individual degree preferences
+
+        Returns
+        -------
+        Updated contact network : pyunicorn.Network object
         """
         #  Get old contact adjacency matrix
         old_contact_adjacency = contact_network.adjacency
