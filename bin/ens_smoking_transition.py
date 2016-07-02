@@ -27,28 +27,28 @@ import scipy.integrate as integ
 
 import igraph
 
-# Add repository path of the model core
-sys.path.append('../')
-
 # Import pyunicorn dependencies
 from pyunicorn import Network
 
 #  Import CopanBehaveModel class from pycopanbehave
 from pycopanbehave import CopanBehaveModel
 
+# Add repository path of the model core
+sys.path.append('../')
 
 #
 #  Define Bunch class
 #
 
+
 class Bunch(dict):
     """Bunch object"""
-    def __init__(self,**kw):
-        dict.__init__(self,kw)
+    def __init__(self, **kw):
+        dict.__init__(self, kw)
         self.__dict__.update(kw)
 
 
-#range = getattr(__builtins__, 'xrange', __builtins__.range)
+range = getattr(__builtins__, 'xrange', __builtins__.range)
 
 
 ###############################################################################
@@ -115,16 +115,16 @@ def interaction_probability_function(distance_metric_matrix, L):
     # Three degrees of influence plus an interaction offset to avoid
     # disconnection
     exp_dec = (L.p_ai-L.interaction_offset) * \
-        np.exp(-(distance_metric_matrix-1) / 2.) 
+        np.exp(-(distance_metric_matrix-1) / 2.)
     distmax = distance_metric_matrix[np.isfinite(distance_metric_matrix)].max()
     histo_range = np.arange(1, distmax)
     distribution = np.histogram(distance_metric_matrix.flatten(), histo_range)
-    
+
     for i in distribution[1][:-1]:
         exp_dec[distance_metric_matrix == i] *= (float(distribution[0][0]) /
                                                  distribution[0][i-1])
 
-    exp_dec +=L.interaction_offset
+    exp_dec += L.interaction_offset
     return exp_dec
 
 

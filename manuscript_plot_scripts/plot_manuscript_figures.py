@@ -109,7 +109,7 @@ def rescale(x, axis, method='percent'):
 
 #  FIGURE 1
 if 1 in to_plot:
-    X=[np.asarray(smokers[k])[:1000, start_time:] for k in keys]
+    X = [np.asarray(smokers[k])[:1000, start_time:] for k in keys]
     X = preprocess_array(X)
     X /= n_smokers
 

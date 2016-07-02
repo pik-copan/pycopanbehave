@@ -20,10 +20,10 @@ RUN FILE SMOKER TRANSITION
 # Add repository path of the model core
 import sys
 import os
-sys.path.append('../bin')
-
-from ens_smoking_transition import Bunch, do_one
+from ens_smoking_transition import Bunch
 from pyunicorn import mpi
+
+sys.path.append('../bin')
 
 range = getattr(__builtins__, 'xrange', __builtins__.range)
 
