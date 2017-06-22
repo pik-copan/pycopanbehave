@@ -11,6 +11,10 @@ The first three authors share the lead authorship (*).
 
 Please see the above paper for a detailed mathematical description of the model (Methods section) and references to the relevant scientific literature.
 
+Software DOI of original release along with publication: 
+
+[![DOI](https://www.zenodo.org/badge/61120354.svg)](https://www.zenodo.org/badge/latestdoi/61120354)
+
 ## Dependencies
 
 Main:
